@@ -8,6 +8,7 @@
 |---|---|---|
 | [b80_ble_sample_a29rc](b80_ble_sample_a29rc/) | `b80_ble_sample` | 遥控器原型：四个键分别是音量加、音量减、静音、播放暂停，电池检测打开，电量按 2.0~3.0 V 线性换算后 Notify。 |
 | [b80_ble_sample_a29rcB](b80_ble_sample_a29rcB/) | `b80_ble_sample` | 同一个原型，广播名和设备名改成 eSamp_B，开机打印 `[A29][VER] B`，给 OTA 来回切换测试用。 |
+| [b80_ble_sample_a29rc_nolog](b80_ble_sample_a29rc_nolog/) | `b80_ble_sample` | 同一个原型，只有正文第 02~04 节的改动，不带日志，和正文写的 48084 字节一致（第 06 节的资源余量按它算）。只编译、没有单独上板。 |
 
 ## 每个目录里有什么
 
@@ -19,6 +20,7 @@
 |---|---|---|
 | b80_ble_sample_a29rc | `drivers/printf.h`<br>`vendor/ble_sample/app.c`<br>`vendor/ble_sample/app_att.c`<br>`vendor/ble_sample/app_att.h`<br>`vendor/ble_sample/app_config.h`<br>`vendor/ble_sample/app_ui.c` | 51444 |
 | b80_ble_sample_a29rcB | `drivers/printf.h`<br>`vendor/ble_sample/app.c`<br>`vendor/ble_sample/app_att.c`<br>`vendor/ble_sample/app_att.h`<br>`vendor/ble_sample/app_config.h`<br>`vendor/ble_sample/app_ui.c` | 51476 |
+| b80_ble_sample_a29rc_nolog | `vendor/ble_sample/app.c`<br>`vendor/ble_sample/app_att.c`<br>`vendor/ble_sample/app_att.h`<br>`vendor/ble_sample/app_config.h`<br>`vendor/ble_sample/app_ui.c` | 48084 |
 
 sha256 见 `改动清单.json`。
 

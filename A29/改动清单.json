@@ -38,5 +38,24 @@
       "sha256": "64b275ef84c76d17dec530a6ceaa2bb701d63b40da69ca6a539546cb6f7ececa"
     },
     "说明": "同一个原型，广播名和设备名改成 eSamp_B，开机打印 `[A29][VER] B`，给 OTA 来回切换测试用。"
+  },
+  {
+    "目录": "b80_ble_sample_a29rc_nolog",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "vendor/ble_sample/app.c",
+      "vendor/ble_sample/app_att.c",
+      "vendor/ble_sample/app_att.h",
+      "vendor/ble_sample/app_config.h",
+      "vendor/ble_sample/app_ui.c"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_a29rc_nolog.bin",
+      "字节": 48084,
+      "sha256": "796aa6c9c80187bce2de7dd39f33c47c2cd2da2e248816574eb255af08e9b46c"
+    },
+    "说明": "同一个原型，只有正文第 02~04 节的改动，不带日志，和正文写的 48084 字节一致（第 06 节的资源余量按它算）。只编译、没有单独上板。"
   }
 ]

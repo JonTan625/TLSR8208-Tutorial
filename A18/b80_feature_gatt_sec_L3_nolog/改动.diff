@@ -1,0 +1,22 @@
+--- a/vendor/ble_feature_test/feature_config.h
++++ b/vendor/ble_feature_test/feature_config.h
+@@ -72,7 +72,7 @@
+ 
+ 
+ 
+-#define FEATURE_TEST_MODE								TEST_MD_MASTER
++#define FEATURE_TEST_MODE								TEST_GATT_SECURITY
+ 
+ 
+ 
+--- a/vendor/ble_feature_test/feature_gatt_security/app_config.h
++++ b/vendor/ble_feature_test/feature_gatt_security/app_config.h
+@@ -69,7 +69,7 @@
+ #define 	LE_SECURITY_MODE_1_LEVEL_4			SMP_TEST_SC_PASSKEY_ENTRY_SDMI
+ 
+ 
+-#define     SMP_TEST_MODE						LE_SECURITY_MODE_1_LEVEL_2
++#define     SMP_TEST_MODE						LE_SECURITY_MODE_1_LEVEL_3
+ 
+ //use app, after connected, enable notify, write some data into characteristic Telink SPP:Phone->Module
+ 

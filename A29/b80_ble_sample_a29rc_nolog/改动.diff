@@ -1,0 +1,131 @@
+--- a/vendor/ble_sample/app.c
++++ b/vendor/ble_sample/app.c
+@@ -30,6 +30,7 @@
+ #include "app_att.h"
+ #include "app_ui.h"
+ #include "app_buffer.h"
++#include "battery_check.h"
+ 
+ #define 	ADV_IDLE_ENTER_DEEP_TIME			60  //60 s
+ #define 	CONN_IDLE_ENTER_DEEP_TIME			60  //60 s
+@@ -265,6 +266,8 @@
+ 	if(battery_check_returnValue)
+ 	{
+ 		analog_write(USED_DEEP_ANA_REG,  analog_read(USED_DEEP_ANA_REG) & (~LOW_BATT_FLG));  //clr
++		extern u16 batt_vol_mv;
++		app_batt_level_update(batt_vol_mv);      // A29 新增
+ 	}
+ 	else
+ 	{
+--- a/vendor/ble_sample/app_att.c
++++ b/vendor/ble_sample/app_att.c
+@@ -88,6 +88,28 @@
+ static u8 batteryValueInCCC[2];
+ static u8 my_batVal[1] 	= {99};
+ 
++/* A29: battery voltage -> level, notify on change */
++void app_batt_level_update(u16 vol_mv)
++{
++	u8 level;
++	if(vol_mv >= 3000){
++		level = 100;
++	}
++	else if(vol_mv <= 2000){
++		level = 0;
++	}
++	else{
++		level = (vol_mv - 2000) / 10;   // 两节 AA：2.0 V 记 0%、3.0 V 记 100%，线性近似
++	}
++
++	if(level != my_batVal[0]){
++		my_batVal[0] = level;
++		if(blc_ll_getCurrentState() == BLS_LINK_STATE_CONN && (batteryValueInCCC[0] & 0x01)){
++			blc_gatt_pushHandleValueNotify(BLS_CONN_HANDLE, BATT_LEVEL_INPUT_DP_H, my_batVal, 1);
++		}
++	}
++}
++
+ //////////////////////// HID /////////////////////////////////////////////////////
+ static const u16 my_hidServiceUUID        = SERVICE_UUID_HUMAN_INTERFACE_DEVICE;
+ static const u16 hidServiceUUID           = SERVICE_UUID_HUMAN_INTERFACE_DEVICE;
+--- a/vendor/ble_sample/app_att.h
++++ b/vendor/ble_sample/app_att.h
+@@ -145,6 +145,8 @@
+  */
+ void my_gatt_init (void);
+ 
++void app_batt_level_update(u16 vol_mv);
++
+ 
+ 
+ #endif /* APP_ATT_H_ */
+--- a/vendor/ble_sample/app_config.h
++++ b/vendor/ble_sample/app_config.h
+@@ -30,7 +30,7 @@
+  */
+ #define FLASH_SIZE_OPTION							FLASH_SIZE_OPTION_512K //very important, user need confirm !!!
+ #define BLE_APP_SECURITY_ENABLE      					1
+-#define	BLE_OTA_SERVER_ENABLE						0
++#define	BLE_OTA_SERVER_ENABLE						1
+ #define TEST_CONN_CURRENT_ENABLE					0		//test connection current, disable UI to have a pure power
+ #define SAVE_RAM_CODE_ENABLE						0			//Enable it if need save RAM code.
+ 																				//Note: When this is enabled, the average power consumption increases.If user use deepsleep retention, user need to add DeepsleepRetentionEarlyWakeupTiming.
+@@ -40,7 +40,7 @@
+ 
+ /* Power Management */
+ #define BLE_APP_PM_ENABLE							1
+-#define PM_DEEPSLEEP_ENABLE            				0 		//test connection power, should disable deepSleep
++#define PM_DEEPSLEEP_ENABLE            				1 		//test connection power, should disable deepSleep
+ #define PM_DEEPSLEEP_RETENTION_ENABLE               1
+ 
+ /* Flash Protection:
+@@ -65,7 +65,7 @@
+ 	#define	UI_KEYBOARD_ENABLE						1
+ #endif
+ 
+-#define APP_BATT_CHECK_ENABLE       				0   //enable or disable battery voltage detection
++#define APP_BATT_CHECK_ENABLE       				1   //enable or disable battery voltage detection
+ 
+ /**
+  *  @brief  DEBUG  Configuration
+@@ -98,7 +98,7 @@
+ /**
+  *  @brief  watchdog enable and timeout setting
+  */
+-#define MODULE_WATCHDOG_ENABLE						0
++#define MODULE_WATCHDOG_ENABLE						1
+ #define WATCHDOG_INIT_TIMEOUT						500  //Unit:ms
+ 
+ 
+@@ -119,12 +119,14 @@
+ 
+ 	#define			CR_VOL_UP				0xf0
+ 	#define			CR_VOL_DN				0xf1
++	#define			CR_MUTE					0xf2		// A29 新增
++	#define			CR_PLAY_PAUSE			0xf3		// A29 新增
+ 
+ 	/**
+ 	 *  @brief  Normal keyboard map
+ 	 */
+-	#define		KB_MAP_NORMAL	{	{CR_VOL_UP,		VK_1},	 \
+-									{CR_VOL_DN,		VK_2}, }
++	#define		KB_MAP_NORMAL	{	{CR_VOL_UP,		CR_PLAY_PAUSE},	 \
++									{CR_VOL_DN,		CR_MUTE}, }
+ 
+ 	//////////////////// KEY CONFIG (EVK board) ///////////////////////////
+ 	#define  KB_DRIVE_PINS  {GPIO_PF0, GPIO_PF1}
+--- a/vendor/ble_sample/app_ui.c
++++ b/vendor/ble_sample/app_ui.c
+@@ -73,6 +73,12 @@
+ 			else if(key0 == CR_VOL_DN){ //volume down
+ 				consumer_key = MKEY_VOL_DN;
+ 			}
++			else if(key0 == CR_MUTE){              // A29 新增
++				consumer_key = MKEY_MUTE;
++			}
++			else{ //CR_PLAY_PAUSE                   // A29 新增
++				consumer_key = MKEY_PLAY_PAUSE;
++			}
+ 			blc_gatt_pushHandleValueNotify (BLS_CONN_HANDLE,HID_CONSUME_REPORT_INPUT_DP_H, (u8 *)&consumer_key, 2);
+ 		}
+ 		else

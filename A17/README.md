@@ -6,7 +6,8 @@
 
 | 目录 | 编译配置 | 改了什么 |
 |---|---|---|
-| [b80_ble_sample_a17gatt](b80_ble_sample_a17gatt/) | `b80_ble_sample` | 新增一个 128 位 UUID 的服务：LED 特征（写 1 字节点白灯）和计数特征（连接后每秒 Notify 一次）。 |
+| [b80_ble_sample_a17gatt](b80_ble_sample_a17gatt/) | `b80_ble_sample` | 新增一个 128 位 UUID 的服务：LED 特征（写 1 字节点白灯）和计数特征（连接后每秒 Notify 一次）。这是我上板实测用的版本，另带第 16、18 篇的日志。 |
+| [b80_ble_sample_a17gatt_nolog](b80_ble_sample_a17gatt_nolog/) | `b80_ble_sample` | 同一个服务，只有正文第 03 节的改动，不带日志，和正文开头写的 44372 字节一致。只编译、没有单独上板。 |
 
 ## 每个目录里有什么
 
@@ -17,6 +18,7 @@
 | 目录 | 替换文件 | bin 字节 |
 |---|---|---|
 | b80_ble_sample_a17gatt | `drivers/printf.h`<br>`vendor/ble_sample/app.c`<br>`vendor/ble_sample/app_att.c`<br>`vendor/ble_sample/app_att.h` | 47380 |
+| b80_ble_sample_a17gatt_nolog | `vendor/ble_sample/app.c`<br>`vendor/ble_sample/app_att.c`<br>`vendor/ble_sample/app_att.h` | 44372 |
 
 sha256 见 `改动清单.json`。
 

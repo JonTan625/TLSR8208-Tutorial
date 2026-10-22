@@ -47,5 +47,21 @@
       "sha256": "ae6f8edb3049570f992dbc37e5d59db452ea63319619dcf9f2014f8a851eb656"
     },
     "说明": "`TEST_GATT_SECURITY`，安全等级保持例程默认的 Level 2，和 Level 3 对照。"
+  },
+  {
+    "目录": "b80_feature_gatt_sec_L3_nolog",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_feature_test",
+    "替换文件": [
+      "vendor/ble_feature_test/feature_config.h",
+      "vendor/ble_feature_test/feature_gatt_security/app_config.h"
+    ],
+    "bin": {
+      "文件": "b80_feature_gatt_sec_L3_nolog.bin",
+      "字节": 40948,
+      "sha256": "d94c2a0e28aaefa99e9ae49cb2c20e8e44f3eb4fbd72ca4d5b65d9b06e3791cf"
+    },
+    "说明": "同上，不打开日志，和正文开头写的 40948 字节一致。不打开日志就看不到串口打印的 PIN 码，只编译、没有单独上板。"
   }
 ]
