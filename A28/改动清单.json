@@ -1,0 +1,17 @@
+[
+  {
+    "目录": "b80_ble_sample_pmoff",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "vendor/ble_sample/app_config.h"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_pmoff.bin",
+      "字节": 40852,
+      "sha256": "441153082798d08ca3bb0fe7a21bb326bcf32080181e2fa34875eb7af931825f"
+    },
+    "说明": "ble_sample 只把 `BLE_APP_PM_ENABLE` 改成 0（关睡眠）。和会睡的同一个固件对比：关睡眠后 BDT 的 Reset 不再报 Swire error。"
+  }
+]

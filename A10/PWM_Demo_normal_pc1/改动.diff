@@ -1,0 +1,34 @@
+--- a/demo/vendor/PWM_Demo/app_config.h
++++ b/demo/vendor/PWM_Demo/app_config.h
+@@ -45,7 +45,7 @@
+ #define	 PWM_IR_FIFO		4
+ #define	 PWM_IR_DMA_FIFO	5
+ 
+-#define	 PWM_MODE			2
++#define	 PWM_MODE			1
+ 
+ /* Disable C linkage for C++ Compilers: */
+ #if defined(__cplusplus)
+--- a/demo/vendor/PWM_Demo/app_normal.c
++++ b/demo/vendor/PWM_Demo/app_normal.c
+@@ -103,7 +103,11 @@
+ 
+ 	pwm_set_clk(CLOCK_SYS_CLOCK_HZ, CLOCK_SYS_CLOCK_HZ);
+ 
++#if (MCU_CORE_TC123X)
+ 	gpio_set_func(PWM_PIN1, AS_PWM0);
++#else
++	gpio_set_func(PWM_PIN, AS_PWMx);	//A10-1 验证：其他芯片只定义了 PWM_PIN/AS_PWMx
++#endif
+ 	pwm_set_mode(PWM0_ID, PWM_NORMAL_MODE);
+ 	pwm_set_cycle_and_duty(PWM0_ID, 1000 * CLOCK_SYS_CLOCK_1US, 400 * CLOCK_SYS_CLOCK_1US);
+ 
+@@ -124,6 +128,8 @@
+ 	pwm_set_phase(PWM0_ID, 300 * CLOCK_SYS_CLOCK_1US);
+ 	pwm_set_phase(PWM1_ID, 800 * CLOCK_SYS_CLOCK_1US);
+ 	pwm_multi_start(FLD_PWM0_EN | FLD_PWM1_EN);
++#else
++	pwm_start(PWM0_ID);	//A10-1 验证：原例程只在 TC123X 下启动 PWM
+ #endif
+ }
+ 

@@ -1,0 +1,17 @@
+[
+  {
+    "目录": "Debug_Demo_eeprom",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "Debug_Demo",
+    "替换文件": [
+      "demo/vendor/Debug_Demo/app.c"
+    ],
+    "bin": {
+      "文件": "Debug_Demo_eeprom.bin",
+      "字节": 9372,
+      "sha256": "6f32f737d4217b7f9cbed2a46f5a7ea3c1ed48bdc486d777700855691b995172"
+    },
+    "说明": "把正文的 `ee_test()` 放进 Debug_Demo，在 `user_init()` 末尾调用并打印 `rbuf`。**这个目录是按正文代码重建的**：我当时上板的那一版没有留源码，重建后编出来也是 9372 字节，和当时一样，但没法逐字节比对，这一版也没有再上板。开发板 J44、J45、J46 跳帽要插着。"
+  }
+]

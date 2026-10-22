@@ -1,0 +1,439 @@
+diff -ruN a/NUCLEO-C542RC/generated/hal/mx_dac1.c b/NUCLEO-C542RC/generated/hal/mx_dac1.c
+--- a/NUCLEO-C542RC/generated/hal/mx_dac1.c
++++ b/NUCLEO-C542RC/generated/hal/mx_dac1.c
+@@ -61,7 +61,7 @@
+   hal_dac_channel_config_t dac_channel_config;
+ 
+   /* ========== Channel 1 ========== */
+-  dac_channel_config.alignment         = HAL_DAC_DATA_ALIGN_8_BITS_RIGHT;
++  dac_channel_config.alignment         = HAL_DAC_DATA_ALIGN_12_BITS_RIGHT; /* A12-1: 12-bit codes */
+   dac_channel_config.trigger           = HAL_DAC_TRIGGER_NONE;
+   dac_channel_config.output_buffer     = HAL_DAC_OUTPUT_BUFFER_ENABLED;
+   dac_channel_config.output_connection = HAL_DAC_OUTPUT_CONNECTION_EXTERNAL;
+diff -ruN a/NUCLEO-C542RC/generated/hal/mx_usart2.c b/NUCLEO-C542RC/generated/hal/mx_usart2.c
+--- a/NUCLEO-C542RC/generated/hal/mx_usart2.c
++++ b/NUCLEO-C542RC/generated/hal/mx_usart2.c
+@@ -54,7 +54,7 @@
+   uart_config.word_length = HAL_UART_WORD_LENGTH_8_BIT;
+   uart_config.stop_bits = HAL_UART_STOP_BIT_1;
+   uart_config.parity = HAL_UART_PARITY_NONE;
+-  uart_config.direction = HAL_UART_DIRECTION_TX;
++  uart_config.direction = HAL_UART_DIRECTION_TX_RX; /* A12-1: RX added for VCP commands */
+   uart_config.hw_flow_ctl = HAL_UART_HW_CONTROL_NONE;
+   uart_config.oversampling = HAL_UART_OVERSAMPLING_16;
+   uart_config.one_bit_sampling = HAL_UART_ONE_BIT_SAMPLE_DISABLE;
+@@ -80,13 +80,14 @@
+     [GPIO Pin] ------> [Signal Name] ------> [Labels]
+ 
+        PA2     ------>   USART2_TX   ------>  PA2
++       PA3     ------>   USART2_RX   ------>  PA3
+     **/
+   gpio_config.mode        = HAL_GPIO_MODE_ALTERNATE;
+   gpio_config.output_type = HAL_GPIO_OUTPUT_PUSHPULL;
+   gpio_config.pull        = HAL_GPIO_PULL_NO;
+   gpio_config.speed       = HAL_GPIO_SPEED_FREQ_LOW;
+   gpio_config.alternate   = HAL_GPIO_AF_7;
+-  HAL_GPIO_Init(PA2_PORT, PA2_PIN, &gpio_config);
++  HAL_GPIO_Init(PA2_PORT, PA2_PIN | PA3_PIN, &gpio_config);
+ 
+   return &hUSART2;
+ }
+@@ -100,7 +101,7 @@
+   HAL_RCC_USART2_DisableClock();
+ 
+   /* De-initialize all GPIOA pins associated with USART2 */
+-  HAL_GPIO_DeInit(PA2_PORT, PA2_PIN);
++  HAL_GPIO_DeInit(PA2_PORT, PA2_PIN | PA3_PIN);
+ }
+ hal_uart_handle_t *mx_usart2_uart_gethandle(void)
+ {
+diff -ruN a/NUCLEO-C542RC/generated/hal/mx_usart2.h b/NUCLEO-C542RC/generated/hal/mx_usart2.h
+--- a/NUCLEO-C542RC/generated/hal/mx_usart2.h
++++ b/NUCLEO-C542RC/generated/hal/mx_usart2.h
+@@ -32,6 +32,8 @@
+ /** Primary aliases for USART2_TX pin */
+ #define PA2_PORT                              HAL_GPIOA
+ #define PA2_PIN                               HAL_GPIO_PIN_2
++#define PA3_PORT                              HAL_GPIOA
++#define PA3_PIN                               HAL_GPIO_PIN_3
+ 
+ /* Exported macros -----------------------------------------------------------*/
+ /* Exported variables --------------------------------------------------------*/
+diff -ruN a/application/example.c b/application/example.c
+--- a/application/example.c
++++ b/application/example.c
+@@ -1,8 +1,9 @@
+ /**
+   ******************************************************************************
+   * file           : example.c
+-  * brief          : DAC constant signal generation without using any trigger
+-  *                  Called by the main after system initialization
++  * brief          : DAC voltage source controlled over the ST-LINK VCP (USART2)
++  *                  Based on hal_dac_simple_conversion; modified for the
++  *                  TLSR8208 ADC linearity test (A12-1).
+   ******************************************************************************
+   *
+   * Copyright (c) 2026 STMicroelectronics.
+@@ -16,106 +17,110 @@
+   */
+ 
+ #include "example.h"
++#include "mx_usart2.h"
+ 
+-/* Private typedef -----------------------------------------------------------*/
+-/* Private define ------------------------------------------------------------*/
+-/* Private macro -------------------------------------------------------------*/
+-/* Assumption: pin Vref+ connected to Vdd at board level */
+-#define VREFPLUS_APPLI    (VDD_VALUE)
++#include <string.h>
+ 
+-#define DAC_ARRAY_SIZE   4
++/* Private define ------------------------------------------------------------*/
++/* Commands, one per line (CR or LF), 115200 8N1 on the VCP:
++ *   M <mV>    set output by millivolts, code = round(mV * 4095 / vref)
++ *   C <code>  set raw 12-bit code (0..4095)
++ *   B <0|1>   output buffer off / on (on: calibrated, range 0.2 V..VDDA-0.2 V)
++ *   R <mV>    set the VREF+ value used by M (measure VDD_MCU with a meter)
++ *   ?         report state
++ * Every command answers one line: "OK code=.. mv=.. buf=.. vref=.." or "ERR ..".
++ */
++#define CMD_LINE_MAX      32U
++#define DAC_CODE_MAX      4095U
++#define VREF_DEFAULT_MV   (VDD_VALUE)
+ 
+ /* Private variables ---------------------------------------------------------*/
++hal_dac_handle_t *pDAC;
++static hal_uart_handle_t *pUART;
+ 
+-hal_dac_handle_t *pDAC;  /* pointer referencing the DAC handle from the generated code */
+-
+-/** output voltage values of the DAC.
+-  * @user: you can change the values to change the output voltage of the DAC.
+-  */
+-const uint16_t DacMilliVoltArray[DAC_ARRAY_SIZE] =
+-{
+-  0,
+-  VREFPLUS_APPLI / 3,
+-  (2 * VREFPLUS_APPLI) / 3,
+-  VREFPLUS_APPLI
+-};
++static uint32_t dac_code = 0U;
++static uint32_t dac_buffer_on = 1U;
++static uint32_t vref_mv = VREF_DEFAULT_MV;
+ 
+-uint8_t DacTabIndex = 0;
++static char cmd_line[CMD_LINE_MAX];
++static uint32_t cmd_len = 0U;
+ 
+ /* Private functions prototype -----------------------------------------------*/
+-
++static app_status_t dac_apply_buffer(uint32_t buffer_on);
++static void uart_puts(const char *s);
++static void reply_state(void);
++static int32_t parse_uint(const char *s, uint32_t *value);
++static void handle_line(void);
+ 
+ /** ########## Step 1 ##########
+-  * The init of the DAC instance is triggered by the applicative code.
++  * DAC on PA4 (DAC1_OUT1), buffer on, code 0. USART2 handle for the commands.
+   */
+ app_status_t app_init(void)
+ {
+   app_status_t return_status = EXEC_STATUS_ERROR;
+ 
+   pDAC = (hal_dac_handle_t *)mx_example_dac_init();
+-
+-  if (pDAC == NULL)
++  pUART = mx_usart2_uart_gethandle();
++  if ((pDAC == NULL) || (pUART == NULL))
+   {
+     goto _app_init_exit;
+   }
+ 
+-  /* The calibration allows a better output voltage precision */
+   if (HAL_DAC_CalibrateChannelBuffer(pDAC, MX_DAC_CHANNEL) != HAL_OK)
+   {
+     goto _app_init_exit;
+   }
+ 
+-  /* Enable the DAC channel */
+   if (HAL_DAC_StartChannel(pDAC, MX_DAC_CHANNEL) != HAL_OK)
+   {
+     goto _app_init_exit;
+   }
+ 
+-  return_status = EXEC_STATUS_INIT_OK;
+-
+-_app_init_exit:
+-
+-  if (return_status == EXEC_STATUS_INIT_OK)
+-  {
+-    PRINTF("[INFO] Step 1: Device initialization COMPLETED.\n");
+-  }
+-  else
++  if (HAL_DAC_SetChannelData(pDAC, MX_DAC_CHANNEL, dac_code) != HAL_OK)
+   {
+-    PRINTF("[ERROR] Step 1: Device initialization ERROR.\n");
++    goto _app_init_exit;
+   }
+ 
++  return_status = EXEC_STATUS_INIT_OK;
++  uart_puts("A12 DAC source ready\r\n");
++  reply_state();
++
++_app_init_exit:
+   return return_status;
+ } /* end app_init */
+ 
+-
+ /** ########## Step 2 ##########
+-  * At each call, the DAC output the following voltage stored in the DacMilliVoltArray array.
+-  * The DAC conversion is automatically done by setting a new value as output voltage of the DAC.
++  * Poll one byte from the VCP; a complete line is parsed and answered.
+   */
+ app_status_t app_process(void)
+ {
+-  app_status_t return_status = EXEC_STATUS_ERROR;
++  uint8_t c;
+ 
+-  /* Configuration of the desire output voltage */
+-  uint8_t dac_raw_value = LL_DAC_CALC_VOLTAGE_TO_DATA(VREFPLUS_APPLI,
+-                                                      DacMilliVoltArray[DacTabIndex], LL_DAC_RESOLUTION_8B);
+-  if (HAL_DAC_SetChannelData(pDAC, MX_DAC_CHANNEL, dac_raw_value) != HAL_OK)
++  if (HAL_UART_Receive(pUART, &c, 1U, 10U) == HAL_OK)
+   {
+-    goto _app_process_exit;
++    if ((c == '\r') || (c == '\n'))
++    {
++      if (cmd_len != 0U)
++      {
++        cmd_line[cmd_len] = '\0';
++        handle_line();
++        cmd_len = 0U;
++      }
++    }
++    else if (cmd_len < (CMD_LINE_MAX - 1U))
++    {
++      cmd_line[cmd_len++] = (char)c;
++    }
++    else
++    {
++      cmd_len = 0U;   /* line too long: drop it */
++      uart_puts("ERR line\r\n");
++    }
+   }
+ 
+-  PRINTF("[INFO] Step 2: DAC output voltage set to %" PRIu16 " mV.\n", DacMilliVoltArray[DacTabIndex]);
+-
+-  return_status = EXEC_STATUS_OK;
+-
+-  /* The DacTabIndex is updated to change the next output voltage value */
+-  DacTabIndex  = (DacTabIndex + 1) % DAC_ARRAY_SIZE;
+-
+-_app_process_exit:
+-  return return_status;
++  return EXEC_STATUS_OK;
+ } /* end app_process */
+ 
+-
+ /** Deinitializes the DAC instance.
+   */
+ app_status_t app_deinit(void)
+@@ -123,3 +128,174 @@
+   mx_example_dac_deinit();
+   return EXEC_STATUS_OK;
+ } /* end app_deinit */
++
++/* Private functions ---------------------------------------------------------*/
++
++/* Reconfigure the channel with the output buffer on or off, then restore the code.
++ * HAL_DAC_SetConfigChannel() needs the channel stopped (idle state). */
++static app_status_t dac_apply_buffer(uint32_t buffer_on)
++{
++  hal_dac_channel_config_t ch;
++
++  if (HAL_DAC_StopChannel(pDAC, MX_DAC_CHANNEL) != HAL_OK)
++  {
++    return EXEC_STATUS_ERROR;
++  }
++
++  ch.data_sign_format  = HAL_DAC_SIGN_FORMAT_UNSIGNED;
++  ch.trigger           = HAL_DAC_TRIGGER_NONE;
++  ch.output_buffer     = (buffer_on != 0U) ? HAL_DAC_OUTPUT_BUFFER_ENABLED : HAL_DAC_OUTPUT_BUFFER_DISABLED;
++  ch.output_connection = HAL_DAC_OUTPUT_CONNECTION_EXTERNAL;
++  ch.alignment         = HAL_DAC_DATA_ALIGN_12_BITS_RIGHT;
++  if (HAL_DAC_SetConfigChannel(pDAC, MX_DAC_CHANNEL, &ch) != HAL_OK)
++  {
++    return EXEC_STATUS_ERROR;
++  }
++
++  if (buffer_on != 0U)
++  {
++    if (HAL_DAC_CalibrateChannelBuffer(pDAC, MX_DAC_CHANNEL) != HAL_OK)
++    {
++      return EXEC_STATUS_ERROR;
++    }
++  }
++
++  if (HAL_DAC_StartChannel(pDAC, MX_DAC_CHANNEL) != HAL_OK)
++  {
++    return EXEC_STATUS_ERROR;
++  }
++
++  if (HAL_DAC_SetChannelData(pDAC, MX_DAC_CHANNEL, dac_code) != HAL_OK)
++  {
++    return EXEC_STATUS_ERROR;
++  }
++
++  dac_buffer_on = (buffer_on != 0U) ? 1U : 0U;
++  return EXEC_STATUS_OK;
++}
++
++static void uart_puts(const char *s)
++{
++  (void)HAL_UART_Transmit(pUART, s, (uint32_t)strlen(s), 100U);
++}
++
++static void reply_state(void)
++{
++  char buf[64];
++  uint32_t mv = (dac_code * vref_mv + (DAC_CODE_MAX / 2U)) / DAC_CODE_MAX;
++
++  (void)snprintf(buf, sizeof(buf), "OK code=%lu mv=%lu buf=%lu vref=%lu\r\n",
++                 (unsigned long)dac_code, (unsigned long)mv,
++                 (unsigned long)dac_buffer_on, (unsigned long)vref_mv);
++  uart_puts(buf);
++}
++
++/* Parse a decimal number after optional spaces; returns 0 on success. */
++static int32_t parse_uint(const char *s, uint32_t *value)
++{
++  uint32_t v = 0U;
++  uint32_t digits = 0U;
++
++  while (*s == ' ')
++  {
++    s++;
++  }
++  while ((*s >= '0') && (*s <= '9'))
++  {
++    v = (v * 10U) + (uint32_t)(*s - '0');
++    s++;
++    digits++;
++    if (digits > 6U)
++    {
++      return -1;
++    }
++  }
++  while (*s == ' ')
++  {
++    s++;
++  }
++  if ((digits == 0U) || (*s != '\0'))
++  {
++    return -1;
++  }
++  *value = v;
++  return 0;
++}
++
++static void handle_line(void)
++{
++  uint32_t v;
++  char cmd = cmd_line[0];
++
++  if (cmd == '?')
++  {
++    reply_state();
++    return;
++  }
++
++  if (parse_uint(&cmd_line[1], &v) != 0)
++  {
++    uart_puts("ERR syntax\r\n");
++    return;
++  }
++
++  switch (cmd)
++  {
++    case 'M':
++    case 'm':
++      if (v > vref_mv)
++      {
++        uart_puts("ERR range\r\n");
++        return;
++      }
++      dac_code = ((v * DAC_CODE_MAX) + (vref_mv / 2U)) / vref_mv;
++      break;
++
++    case 'C':
++    case 'c':
++      if (v > DAC_CODE_MAX)
++      {
++        uart_puts("ERR range\r\n");
++        return;
++      }
++      dac_code = v;
++      break;
++
++    case 'B':
++    case 'b':
++      if (v > 1U)
++      {
++        uart_puts("ERR range\r\n");
++        return;
++      }
++      if (dac_apply_buffer(v) != EXEC_STATUS_OK)
++      {
++        uart_puts("ERR dac\r\n");
++        return;
++      }
++      reply_state();
++      return;
++
++    case 'R':
++    case 'r':
++      if ((v < 2500U) || (v > 3600U))
++      {
++        uart_puts("ERR range\r\n");
++        return;
++      }
++      vref_mv = v;
++      reply_state();
++      return;
++
++    default:
++      uart_puts("ERR cmd\r\n");
++      return;
++  }
++
++  if (HAL_DAC_SetChannelData(pDAC, MX_DAC_CHANNEL, dac_code) != HAL_OK)
++  {
++    uart_puts("ERR dac\r\n");
++    return;
++  }
++  reply_state();
++}
+diff -ruN a/application/main.c b/application/main.c
+--- a/application/main.c
++++ b/application/main.c
+@@ -21,7 +21,7 @@
+ /* Private typedef -----------------------------------------------------------*/
+ /* Private define ------------------------------------------------------------*/
+ /* @user: configure the delay in milliseconds between 2 loop rounds */
+-#define EXAMPLE_LOOP_DELAY_MS 1000U
++#define EXAMPLE_LOOP_DELAY_MS 0U /* A12-1: app_process polls UART, no extra delay */
+ 
+ /* Private macro -------------------------------------------------------------*/
+ /* Private variables ---------------------------------------------------------*/
+@@ -66,7 +66,10 @@
+       /* Report success: status LED remains turned on */
+       led_on(MX_STATUS_LED);
+ 
++#if (EXAMPLE_LOOP_DELAY_MS != 0U)
++      /* A12-1: HAL_Delay(0) still waits one tick (1 ms); UART bytes arriving meanwhile overrun RDR */
+       HAL_Delay(EXAMPLE_LOOP_DELAY_MS);
++#endif
+     } /* end while */
+   } /* end applicative part */
+ 

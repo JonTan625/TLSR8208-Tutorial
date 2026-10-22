@@ -1,0 +1,10 @@
+--- a/demo/vendor/ADC_Demo/ADC_V1.0/ADC_Demo/app.c
++++ b/demo/vendor/ADC_Demo/ADC_V1.0/ADC_Demo/app.c
+@@ -37,6 +37,7 @@
+ 	 random_generator_init();
+ #else
+ 	adc_init();
++	adc_set_gpio_calib_vref(1175, 0);	//A12-1 验证：盖掉 OTP 校准值，按默认 1175 mV、偏移 0 换算
+ 
+ 	#if(ADC_MODE==ADC_BASE_MODE)
+ #if (MCU_CORE_B80 || MCU_CORE_B80B)

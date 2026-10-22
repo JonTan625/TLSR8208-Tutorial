@@ -1,0 +1,218 @@
+--- a/drivers/printf.h
++++ b/drivers/printf.h
+@@ -24,14 +24,14 @@
+ #include "gpio.h"
+ #pragma once
+ 
+-#define DEBUG_MODE 0
++#define DEBUG_MODE 1
+ 
+ #if(DEBUG_MODE==1)
+ 
+ #define  DEBUG_IO		1
+ #define  DEBUG_USB		2
+ 
+-#define  DEBUG_BUS  	0
++#define  DEBUG_BUS  	1
+ 
+ #if(DEBUG_BUS==DEBUG_IO)
+ #define PRINT_BAUD_RATE             		115200   	//1M baud rate,should Not bigger than 1Mb/s
+--- a/vendor/ble_sample/app.c
++++ b/vendor/ble_sample/app.c
+@@ -31,7 +31,7 @@
+ #include "app_ui.h"
+ #include "app_buffer.h"
+ 
+-#define 	ADV_IDLE_ENTER_DEEP_TIME			60  //60 s
++#define 	ADV_IDLE_ENTER_DEEP_TIME			3   //A07-3 test: was 60 s
+ #define 	CONN_IDLE_ENTER_DEEP_TIME			60  //60 s
+ 
+ 
+@@ -81,9 +81,13 @@
+  * @param[in]  n - data length of event
+  * @return     none
+  */
++/* A18-1 verification log: callback only records, main_loop prints */
++volatile u8 a18_log_flag;	//BIT(0) direct adv timeout, switched to undirected
++
+ void app_switch_to_undirected_adv(u8 e, u8 *p, int n)
+ {
+ 	(void)e;(void)p;(void)n;
++	a18_log_flag |= BIT(0);
+ 	bls_ll_setAdvParam( MY_ADV_INTERVAL_MIN, MY_ADV_INTERVAL_MAX,
+ 						ADV_TYPE_CONNECTABLE_UNDIRECTED, app_own_address_type,
+ 						0,  NULL,
+@@ -104,11 +108,65 @@
+  * @param[in]  n - data length of event
+  * @return     none
+  */
++/* A16-2 verification log: callbacks only record, main_loop prints */
++volatile u8  a16_log_flag;	//BIT(0) connect, BIT(1) conn para update, BIT(2) terminate
++volatile u16 a16_conn_interval, a16_conn_latency, a16_conn_timeout;
++volatile u16 a16_upd_interval, a16_upd_latency, a16_upd_timeout;
++volatile u8  a16_term_reason;
++
++/* A18-1 verification log: host events print directly, same as feature_gatt_security/app.c */
++int app_host_event_callback (u32 h, u8 *para, int n)
++{
++	(void)n;
++	switch(h & 0xFF)
++	{
++		case GAP_EVT_SMP_PAIRING_BEGIN:
++			printf("[A18][SMP] pairing begin\n");
++			break;
++		case GAP_EVT_SMP_PAIRING_SUCCESS:
++		{
++			gap_smp_pairingSuccessEvt_t* pe = (gap_smp_pairingSuccessEvt_t*)para;
++			printf("[A18][SMP] pairing success, bonding %d, save result %d\n", pe->bonding, pe->bonding_result);
++		}
++			break;
++		case GAP_EVT_SMP_PAIRING_FAIL:
++		{
++			gap_smp_pairingFailEvt_t* pe = (gap_smp_pairingFailEvt_t*)para;
++			printf("[A18][SMP] pairing failed, reason 0x%x\n", pe->reason);
++		}
++			break;
++		case GAP_EVT_SMP_CONN_ENCRYPTION_DONE:
++		{
++			gap_smp_connEncDoneEvt_t* pe = (gap_smp_connEncDoneEvt_t*)para;
++			printf("[A18][SMP] encryption done, %s\n", pe->re_connect == SMP_STANDARD_PAIR ? "first pairing" : "reconnect");
++		}
++			break;
++		default:
++			break;
++	}
++	return 0;
++}
++
++void task_conn_para_update(u8 e, u8 *p, int n)
++{
++	(void)e;(void)n;
++	tlk_contr_evt_connParaUpdate_t *pEvt = (tlk_contr_evt_connParaUpdate_t *)p;
++	a16_upd_interval = pEvt->conn_interval;
++	a16_upd_latency = pEvt->conn_latency;
++	a16_upd_timeout = pEvt->conn_timeout;
++	a16_log_flag |= BIT(1);
++}
++
+ void task_connect(u8 e, u8 *p, int n)
+ {
+ 
+ 	bls_l2cap_requestConnParamUpdate (CONN_INTERVAL_10MS, CONN_INTERVAL_10MS, 99, CONN_TIMEOUT_4S);  // 1 S
+ 
++	a16_conn_interval = bls_ll_getConnectionInterval();
++	a16_conn_latency = bls_ll_getConnectionLatency();
++	a16_conn_timeout = bls_ll_getConnectionTimeout();
++	a16_log_flag |= BIT(0);
++
+ 	#if (PM_DEEPSLEEP_ENABLE)
+ 		latest_user_event_tick = clock_time();
+ 		device_in_connection_state = 1;
+@@ -134,6 +192,8 @@
+ 	#endif
+ 
+ 	tlk_contr_evt_terminate_t *pEvt = (tlk_contr_evt_terminate_t *)p;
++	a16_term_reason = pEvt->terminate_reason;
++	a16_log_flag |= BIT(2);
+ 	if(pEvt->terminate_reason == HCI_ERR_CONN_TIMEOUT){
+ 
+ 	}
+@@ -217,6 +277,7 @@
+ 				if( blc_ll_getCurrentState() == BLS_LINK_STATE_ADV && !sendTerminate_before_enterDeep && \
+ 						clock_time_exceed(advertise_begin_tick , ADV_IDLE_ENTER_DEEP_TIME * 1000000))
+ 				{
++					printf("[A07][DEEP] adv idle, enter deep\n");
+ 					cpu_sleep_wakeup(DEEPSLEEP_MODE, PM_WAKEUP_PAD, 0);  //deepsleep
+ 				}
+ 				//conn 60s no event(key/voice/led), enter deepsleep
+@@ -317,6 +378,7 @@
+ 	blc_readFlashSize_autoConfigCustomFlashSector();
+ 
+ 	/* attention that this function must be called after "blc_readFlashSize_autoConfigCustomFlashSector" !!!*/
++	printf("[A07][BOOT] pad_wakeup %d, wakeup_src 0x%x, deepretn %d\n", pmParam.is_pad_wakeup, pmParam.wakeup_src, pmParam.is_deepretn_back);
+ 	blc_app_loadCustomizedParameters_normal();
+ 
+ 
+@@ -360,6 +422,7 @@
+ 	u8  mac_random_static[6];
+ 	/* for 512K Flash, flash_sector_mac_address equals to 0x7F000, for 128K  Flash, flash_sector_mac_address equals to 0x1F000 */
+ 	blc_initMacAddress(flash_sector_mac_address, mac_public, mac_random_static);
++	printf("[A16][MAC] public %x:%x:%x:%x:%x:%x\n", mac_public[5], mac_public[4], mac_public[3], mac_public[2], mac_public[1], mac_public[0]);
+ 
+ 
+ 	#if(BLE_DEVICE_ADDRESS_TYPE == BLE_DEVICE_ADDRESS_PUBLIC)
+@@ -406,6 +469,11 @@
+ 												    	//and this func must call before bls_smp_enableParing
+ 		blc_smp_peripheral_init();
+ 		blc_smp_setSecurityLevel(Unauthenticated_Pairing_with_Encryption);
++		blc_gap_registerHostEventHandler( app_host_event_callback );
++		blc_gap_setEventMask( GAP_EVT_MASK_SMP_PAIRING_BEGIN   |  \
++							  GAP_EVT_MASK_SMP_PAIRING_SUCCESS |  \
++							  GAP_EVT_MASK_SMP_PAIRING_FAIL    |  \
++							  GAP_EVT_MASK_SMP_CONN_ENCRYPTION_DONE );
+ 
+ 	#else
+ 		blc_smp_setSecurityLevel(No_Security);
+@@ -460,6 +528,7 @@
+ 			}
+ 
+ 			//it is recommended that direct ADV only last for several seconds, then switch to undirected adv
++			printf("[A18][ADV] directed low duty, peer addr type %d, irk valid %d\n", bondInfo.peer_addr_type, blc_app_isIrkValid(bondInfo.peer_irk));
+ 			bls_ll_setAdvDuration(MY_DIRECT_ADV_TIME, 1);
+ 			bls_app_registerEventCallback (BLT_EV_FLAG_ADV_DURATION_TIMEOUT, &app_switch_to_undirected_adv);
+ 
+@@ -474,6 +543,7 @@
+ 											 ADV_FP_NONE);
+ 		}
+ 
++	printf("[A18][ADV] bonded devices %d, adv type %s, status 0x%x\n", bond_number, bond_number ? "directed" : "undirected", adv_param_status);
+ 	if(adv_param_status != BLE_SUCCESS){
+ 		printf("[APP][INI] ADV parameters error 0x%x!!!\n", adv_param_status);
+ 	}
+@@ -488,6 +558,7 @@
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_CONNECT, &task_connect);
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_TERMINATE, &task_terminate);
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_SUSPEND_EXIT, &task_suspend_exit);
++	bls_app_registerEventCallback (BLT_EV_FLAG_CONN_PARA_UPDATE, &task_conn_para_update);
+ 
+ 
+ 	///////////////////// Power Management initialization///////////////////
+@@ -708,6 +779,27 @@
+ 	#endif
+ 
+ 
++	if(a18_log_flag){
++		a18_log_flag = 0;
++		printf("[A18][ADV] direct adv 10 s timeout, switched to undirected\n");
++	}
++
++	if(a16_log_flag){
++		u32 r = irq_disable();
++		u8 f = a16_log_flag;
++		a16_log_flag = 0;
++		irq_restore(r);
++		if(f & BIT(0)){
++			printf("[A16][CONN] connected: interval %d x1.25ms, latency %d, timeout %d x10ms\n", a16_conn_interval, a16_conn_latency, a16_conn_timeout);
++		}
++		if(f & BIT(1)){
++			printf("[A16][UPD] conn para update: interval %d x1.25ms, latency %d, timeout %d x10ms\n", a16_upd_interval, a16_upd_latency, a16_upd_timeout);
++		}
++		if(f & BIT(2)){
++			printf("[A16][TERM] terminate reason 0x%x\n", a16_term_reason);
++		}
++	}
++
+ 	////////////////////////////////////// PM Process /////////////////////////////////
+ 	blt_pm_proc();
+ 
+--- a/vendor/ble_sample/app_config.h
++++ b/vendor/ble_sample/app_config.h
+@@ -40,7 +40,7 @@
+ 
+ /* Power Management */
+ #define BLE_APP_PM_ENABLE							1
+-#define PM_DEEPSLEEP_ENABLE            				0 		//test connection power, should disable deepSleep
++#define PM_DEEPSLEEP_ENABLE            				1 		//test connection power, should disable deepSleep
+ #define PM_DEEPSLEEP_RETENTION_ENABLE               1
+ 
+ /* Flash Protection:

@@ -1,0 +1,23 @@
+--- a/demo/vendor/TIMER_Demo/app.c
++++ b/demo/vendor/TIMER_Demo/app.c
+@@ -69,6 +69,9 @@
+ 	/****  timer0 POL_FALLING  TIMER_GPIO link LED3  **/
+ 	timer0_gpio_init(TIMER_GPIO, POL_FALLING);
+ 	irq_enable();
++	/* 先建立稳定高电平，再产生开始测量的下降沿。 */
++	gpio_write(LED3, 1);
++	sleep_ms(1);
+ 	timer0_set_mode(TIMER_MODE_GPIO_WIDTH,0,0);
+ 	timer_start(TIMER0);
+ 	gpio_write(LED3, 0);
+--- a/demo/vendor/TIMER_Demo/app_config.h
++++ b/demo/vendor/TIMER_Demo/app_config.h
+@@ -72,7 +72,7 @@
+ #define TIMER_32K_WD_RESET_MODE 8
+ #endif
+ 
+-#define TIMER_MODE				TIMER_SYS_CLOCK_MODE
++#define TIMER_MODE				TIMER_GPIO_WIDTH_MODE
+ 
+ /* Disable C linkage for C++ Compilers: */
+ #if defined(__cplusplus)

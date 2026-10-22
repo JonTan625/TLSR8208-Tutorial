@@ -1,0 +1,32 @@
+--- a/demo/vendor/ADC_Demo/ADC_V1.0/ADC_Demo/app.c
++++ b/demo/vendor/ADC_Demo/ADC_V1.0/ADC_Demo/app.c
+@@ -30,6 +30,11 @@
+ volatile unsigned short adc_manual_val;
+ volatile unsigned int rns_val;
+ 
++/* A12-1 linearity test: raw code from the last adc_sample_and_get_result() (chip/B80/drivers/adc.c) */
++extern volatile unsigned short adc_code;
++extern volatile unsigned short g_adc_vref;
++extern volatile signed char g_adc_vref_offset;
++
+ void user_init(void)
+ {
+ 
+@@ -55,6 +60,8 @@
+ 
+ 	adc_power_on_sar_adc(1);		//After setting the ADC parameters, turn on the ADC power supply control bit
+ 
++	printf("ADC_INIT vref=%d off=%d\r\n", g_adc_vref, g_adc_vref_offset);	//A12-1
++
+ #endif
+ 
+ }
+@@ -70,6 +77,8 @@
+ 
+ 	#if(ADC_MODE==ADC_BASE_MODE)
+ 		base_val = adc_sample_and_get_result();
++		printf("ADC %d %d\r\n", adc_code, base_val);	//A12-1: raw code, mV
++		sleep_ms(20);
+ 	#elif (ADC_MODE==ADC_VBAT_MODE)
+ 		vbat_val = adc_sample_and_get_result();
+     #elif (ADC_MODE==ADC_VBAT_CHANNEL_MODE)

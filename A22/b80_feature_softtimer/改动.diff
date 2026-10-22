@@ -1,0 +1,11 @@
+--- a/vendor/ble_feature_test/feature_config.h
++++ b/vendor/ble_feature_test/feature_config.h
+@@ -72,7 +72,7 @@
+ 
+ 
+ 
+-#define FEATURE_TEST_MODE								TEST_MD_MASTER
++#define FEATURE_TEST_MODE								TEST_USER_BLT_SOFT_TIMER
+ 
+ 
+ 

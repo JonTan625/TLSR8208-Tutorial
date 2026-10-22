@@ -1,0 +1,18 @@
+[
+  {
+    "目录": "b80_ble_sample_a26",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_sample/app.c"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_a26.bin",
+      "字节": 48212,
+      "sha256": "0027dada05f860e0c4ee4b37d49df445b6f7e15b0e6d96e4222e134f53fe04ac"
+    },
+    "说明": "在第 18 篇带日志的 ble_sample 上加开机自测：打印校准扇区 0x7E000 的情况和模拟寄存器 0x8a 的前后值；**0x7E000 整个扇区为空时会写入测试值 0x15**（下次开机生效），只剩这个测试值时再擦掉；另外在被锁住的低 256 KB 里的 0x3F000 先带锁写、再解锁写，读回对比后擦除并恢复锁。**它会写 Flash 校准扇区，只在开发板上跑，别烧到产品上。**"
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "目录": "b80_ble_sample_a17gatt",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_sample/app.c",
+      "vendor/ble_sample/app_att.c",
+      "vendor/ble_sample/app_att.h"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_a17gatt.bin",
+      "字节": 47380,
+      "sha256": "a653fdf884944a66d808c7e89facdb74794a18cf7dd1910f4c53d3ade4a16d4f"
+    },
+    "说明": "新增一个 128 位 UUID 的服务：LED 特征（写 1 字节点白灯）和计数特征（连接后每秒 Notify 一次）。"
+  }
+]

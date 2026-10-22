@@ -1,0 +1,11 @@
+--- a/demo/vendor/PWM_Demo/app_config.h
++++ b/demo/vendor/PWM_Demo/app_config.h
+@@ -45,7 +45,7 @@
+ #define	 PWM_IR_FIFO		4
+ #define	 PWM_IR_DMA_FIFO	5
+ 
+-#define	 PWM_MODE			2
++#define	 PWM_MODE			5
+ 
+ /* Disable C linkage for C++ Compilers: */
+ #if defined(__cplusplus)

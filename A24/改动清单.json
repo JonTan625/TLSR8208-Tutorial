@@ -1,0 +1,18 @@
+[
+  {
+    "目录": "b80_ble_slave_2_4g_pb3win",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_slave_2_4g",
+    "替换文件": [
+      "vendor/ble_slave_2_4g/2_4g_test/app_tpll_prx.c",
+      "vendor/ble_slave_2_4g/app_config.h"
+    ],
+    "bin": {
+      "文件": "b80_ble_slave_2_4g_pb3win.bin",
+      "字节": 47444,
+      "sha256": "3365a31174dad2cc833b3ad10fbb1d398f7ff9fea5f0f8dc0cec71364c37d67c"
+    },
+    "说明": "双模例程在 2.4G 窗口里把 PB3 拉高、退出时拉低，示波器看 PB3 就是 2.4G 时间片。"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "目录": "b80_ble_sample_a29rc",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_sample/app.c",
+      "vendor/ble_sample/app_att.c",
+      "vendor/ble_sample/app_att.h",
+      "vendor/ble_sample/app_config.h",
+      "vendor/ble_sample/app_ui.c"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_a29rc.bin",
+      "字节": 51444,
+      "sha256": "63b7c0e7e57488153a78d722dde15db8b36104b430b8240911b03bf622cd0c32"
+    },
+    "说明": "遥控器原型：四个键分别是音量加、音量减、静音、播放暂停，电池检测打开，电量按 2.0~3.0 V 线性换算后 Notify。"
+  },
+  {
+    "目录": "b80_ble_sample_a29rcB",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_sample/app.c",
+      "vendor/ble_sample/app_att.c",
+      "vendor/ble_sample/app_att.h",
+      "vendor/ble_sample/app_config.h",
+      "vendor/ble_sample/app_ui.c"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_a29rcB.bin",
+      "字节": 51476,
+      "sha256": "64b275ef84c76d17dec530a6ceaa2bb701d63b40da69ca6a539546cb6f7ececa"
+    },
+    "说明": "同一个原型，广播名和设备名改成 eSamp_B，开机打印 `[A29][VER] B`，给 OTA 来回切换测试用。"
+  }
+]

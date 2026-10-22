@@ -1,0 +1,65 @@
+[
+  {
+    "目录": "PWM_Demo_normal_pc1",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PWM_Demo",
+    "替换文件": [
+      "demo/vendor/PWM_Demo/app_config.h",
+      "demo/vendor/PWM_Demo/app_normal.c"
+    ],
+    "bin": {
+      "文件": "PWM_Demo_normal_pc1.bin",
+      "字节": 6908,
+      "sha256": "391af5b202e44e6e177e62470cf8085b306305485f7ff75b6a45a1f8bc354015"
+    },
+    "说明": "`PWM_MODE` 改成 1（连续模式），补上 B80 分支漏掉的选脚 `gpio_set_func(PWM_PIN, AS_PWMx)` 和 `pwm_start(PWM0_ID)`。PC1 输出 1 kHz、40%。"
+  },
+  {
+    "目录": "PWM_Demo_normal_pa5",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PWM_Demo",
+    "替换文件": [
+      "demo/vendor/PWM_Demo/app_config.h",
+      "demo/vendor/PWM_Demo/app_normal.c"
+    ],
+    "bin": {
+      "文件": "PWM_Demo_normal_pa5.bin",
+      "字节": 6904,
+      "sha256": "32d075e13c17e712528c0b0489269fa9287b559035d9390a90a7a16939039c79"
+    },
+    "说明": "同上，输出脚改到 PA5（绿灯 D2），看亮度。"
+  },
+  {
+    "目录": "PWM_Demo_irdma_pa2",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PWM_Demo",
+    "替换文件": [
+      "demo/vendor/PWM_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "PWM_Demo_irdma_pa2.bin",
+      "字节": 7544,
+      "sha256": "83d50e764acb37772b58504fcf6c8c99e4d90397e396603a2d0c7e44cf0ee8ba"
+    },
+    "说明": "`PWM_MODE` 改成 5（红外 DMA FIFO），输出脚用例程默认的 PA2。"
+  },
+  {
+    "目录": "PWM_Demo_irdma_pc1",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PWM_Demo",
+    "替换文件": [
+      "demo/vendor/PWM_Demo/app_config.h",
+      "demo/vendor/PWM_Demo/app_ir_dma_fifo.c"
+    ],
+    "bin": {
+      "文件": "PWM_Demo_irdma_pc1.bin",
+      "字节": 7548,
+      "sha256": "ff0e2d86318ea331741c469de9b264846a742e4789f8cb0610d4c83b80f5a038"
+    },
+    "说明": "红外 DMA FIFO，输出脚改到 PC1。"
+  }
+]

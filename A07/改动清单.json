@@ -1,0 +1,19 @@
+[
+  {
+    "目录": "b80_ble_sample_a07wake",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_sample/app.c",
+      "vendor/ble_sample/app_config.h"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_a07wake.bin",
+      "字节": 47364,
+      "sha256": "9d840c331b01223d7efde7467ccc3989d823cc6da4cf82b72f13895c1b347daf"
+    },
+    "说明": "在第 18 篇带日志的 ble_sample 上改：广播无连接 3 s（原来 60 s）就进深睡，打开 `PM_DEEPSLEEP_ENABLE`，上电打印唤醒来源 `[A07][BOOT]`、进深睡前打印 `[A07][DEEP]`。进深睡后按键，看能不能叫醒。"
+  }
+]

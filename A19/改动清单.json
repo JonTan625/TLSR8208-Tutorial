@@ -1,0 +1,56 @@
+[
+  {
+    "目录": "b80_ble_sample_ota_addr",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_sample/app.c",
+      "vendor/ble_sample/app_config.h"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_ota_addr.bin",
+      "字节": 48708,
+      "sha256": "93e97c1fc39cd52523f061f70106314ace435a77051b460da3d87417cd87a283"
+    },
+    "说明": "`BLE_OTA_SERVER_ENABLE` 改成 1，开机打印第二启动地址和新固件存放地址（`[OTA][CFG]`）。"
+  },
+  {
+    "目录": "b80_ble_sample_otaA",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_sample/app.c",
+      "vendor/ble_sample/app_config.h",
+      "vendor/ble_sample/app_ui.c"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_otaA.bin",
+      "字节": 48804,
+      "sha256": "f241e8e6b8477432f3c43568134d544529e22ee9b9a830f439888b7808b909df"
+    },
+    "说明": "OTA 来回切区用的 A 版：打印 `[OTA][VER] A`、OTA 开始和结果，广播名 eSample。"
+  },
+  {
+    "目录": "b80_ble_sample_otaB",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_sample/app.c",
+      "vendor/ble_sample/app_att.c",
+      "vendor/ble_sample/app_config.h",
+      "vendor/ble_sample/app_ui.c"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_otaB.bin",
+      "字节": 48804,
+      "sha256": "c14ffb5fe3f24b1ede1c448784b2ed6b5ce96af67dbfe484e28c735900d14b21"
+    },
+    "说明": "B 版：打印 `[OTA][VER] B`，广播名和设备名改成 eSamp_B，方便在 App 里分清。"
+  }
+]

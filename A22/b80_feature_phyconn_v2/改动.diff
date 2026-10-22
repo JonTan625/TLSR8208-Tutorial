@@ -1,0 +1,87 @@
+--- a/drivers/printf.h
++++ b/drivers/printf.h
+@@ -24,14 +24,14 @@
+ #include "gpio.h"
+ #pragma once
+ 
+-#define DEBUG_MODE 0
++#define DEBUG_MODE 1
+ 
+ #if(DEBUG_MODE==1)
+ 
+ #define  DEBUG_IO		1
+ #define  DEBUG_USB		2
+ 
+-#define  DEBUG_BUS  	0
++#define  DEBUG_BUS  	1
+ 
+ #if(DEBUG_BUS==DEBUG_IO)
+ #define PRINT_BAUD_RATE             		115200   	//1M baud rate,should Not bigger than 1Mb/s
+--- a/vendor/ble_feature_test/feature_config.h
++++ b/vendor/ble_feature_test/feature_config.h
+@@ -72,7 +72,7 @@
+ 
+ 
+ 
+-#define FEATURE_TEST_MODE								TEST_MD_MASTER
++#define FEATURE_TEST_MODE								TEST_PHY_CONN
+ 
+ 
+ 
+--- a/vendor/ble_feature_test/feature_phy_conn/app.c
++++ b/vendor/ble_feature_test/feature_phy_conn/app.c
+@@ -128,9 +128,21 @@
+ }
+ 
+ 
++/* B4 验证：回调里只记录，main_loop 里打印。p 指向 1 字节当前 PHY（1 = 1M、2 = 2M），n = 1（BLE 开发手册 Controller Event） */
++volatile u8 b4_req_cnt = 0;			//已发的 PHY 请求数
++volatile u8 b4_req_phy = 0;			//最近一次请求的 PHY
++volatile u8 b4_phy_evt_cnt = 0;
++volatile u8 b4_phy_cur, b4_phy_n;
++volatile u8 b4_hist_phy[16];		//第 k 次事件的 PHY，供 Tdebug 读
++volatile u8 b4_hist_req[16];		//第 k 次事件发生时的请求数
++
+ void callback_phy_update_complete_event(u8 e,u8 *p, int n)
+ {
+-//	hci_le_phyUpdateCompleteEvt_t *pEvt = (hci_le_phyUpdateCompleteEvt_t *)p;
++	b4_phy_cur = p[0];
++	b4_phy_n = n;
++	b4_hist_phy[b4_phy_evt_cnt & 15] = p[0];
++	b4_hist_req[b4_phy_evt_cnt & 15] = b4_req_cnt;
++	b4_phy_evt_cnt++;
+ 
+ 	DBG_CHN4_TOGGLE;;
+ }
+@@ -506,10 +518,20 @@
+ 
+ 		if((phy_update_test_seq++)%2 == 0){
+ 			blc_ll_setPhy(BLS_CONN_HANDLE, PHY_TRX_PREFER, PHY_PREFER_2M, PHY_PREFER_2M);
++			b4_req_phy = 2;
+ 		}
+ 		else{
+ 			blc_ll_setPhy(BLS_CONN_HANDLE, PHY_TRX_PREFER, PHY_PREFER_1M, PHY_PREFER_1M);
++			b4_req_phy = 1;
+ 		}
++		b4_req_cnt++;
++		printf("[B4] R%d %dM t%d\n", b4_req_cnt, b4_req_phy, clock_time()/16000);
++	}
++
++	static u8 b4_phy_evt_printed = 0;
++	if(b4_phy_evt_printed != b4_phy_evt_cnt){
++		b4_phy_evt_printed = b4_phy_evt_cnt;
++		printf("[B4] E%d phy%d n%d R%d t%d\n", b4_phy_evt_cnt, b4_phy_cur, b4_phy_n, b4_req_cnt, clock_time()/16000);
+ 	}
+ 
+ 	#if(BLE_APP_PM_ENABLE)
+--- a/vendor/ble_feature_test/feature_phy_conn/app_config.h
++++ b/vendor/ble_feature_test/feature_phy_conn/app_config.h
+@@ -34,7 +34,7 @@
+  *  @brief  Feature select in BLE Sample project
+  */
+ #define FLASH_SIZE_OPTION							FLASH_SIZE_OPTION_512K //very important, user need confirm !!!
+-#define BLE_APP_PM_ENABLE							1
++#define BLE_APP_PM_ENABLE							0	//B4：关睡眠，BDT/Tdebug 才连得上
+ #define PM_DEEPSLEEP_RETENTION_ENABLE            	0
+ #define BLE_APP_SECURITY_ENABLE      					0
+ 

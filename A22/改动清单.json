@@ -1,0 +1,70 @@
+[
+  {
+    "目录": "b80_feature_dle_a22_v2",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_feature_test",
+    "替换文件": [
+      "drivers/printf.c",
+      "drivers/printf.h",
+      "vendor/ble_feature_test/feature_DLE_slave/app.c",
+      "vendor/ble_feature_test/feature_config.h"
+    ],
+    "bin": {
+      "文件": "b80_feature_dle_a22_v2.bin",
+      "字节": 45620,
+      "sha256": "c77d60daf35009a01454498392fd658c203e358d84c0a150f7401181649c8cea"
+    },
+    "说明": "ble_feature_test 改成 `TEST_LL_DATA_LENGTH_EXTENSION_SLAVE`（DLE 从机）并加日志：打印 DLE、MTU 协商结果和连接参数更新；手机往 SPP 特征写 `T` 后连续 Notify 10 s 测吞吐。这个模式打开日志后 RAM 不够，所以把 `drivers/printf.c` 的 `io_putchar()` 从 RAM 挪到 Flash，同时把逐位等待改成按绝对时刻对齐（在 Flash 里跑慢，原来的相对等待会累积误差，字节会乱）。"
+  },
+  {
+    "目录": "b80_feature_phyconn_log",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_feature_test",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_feature_test/feature_config.h",
+      "vendor/ble_feature_test/feature_phy_conn/app.c"
+    ],
+    "bin": {
+      "文件": "b80_feature_phyconn_log.bin",
+      "字节": 42036,
+      "sha256": "8d559f86ced1f84efefbda2cc3a7dbc6acbc4516a1e351152ecbca427f115104"
+    },
+    "说明": "`TEST_PHY_CONN`（1M/2M 切换）打印每次发出的 PHY 请求和 PHY 更新事件。"
+  },
+  {
+    "目录": "b80_feature_phyconn_v2",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_feature_test",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_feature_test/feature_config.h",
+      "vendor/ble_feature_test/feature_phy_conn/app.c",
+      "vendor/ble_feature_test/feature_phy_conn/app_config.h"
+    ],
+    "bin": {
+      "文件": "b80_feature_phyconn_v2.bin",
+      "字节": 39252,
+      "sha256": "f7d8ea8b6cd6867980dd071b6132d9da92ad7789afa0bee2c26e6efaddd51eec"
+    },
+    "说明": "同上，改成记录回调参数 `p[0]`（1 字节当前 PHY）的历史给 Tdebug 读，并关掉睡眠（`BLE_APP_PM_ENABLE` 0），BDT 才连得上。"
+  },
+  {
+    "目录": "b80_feature_softtimer",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_feature_test",
+    "替换文件": [
+      "vendor/ble_feature_test/feature_config.h"
+    ],
+    "bin": {
+      "文件": "b80_feature_softtimer.bin",
+      "字节": 40612,
+      "sha256": "80e110cda88324f2695c3a7aca65f7872df0b1a8a72513b9c15b26992cbd1a1e"
+    },
+    "说明": "`TEST_USER_BLT_SOFT_TIMER`（软件定时器），没有别的改动。"
+  }
+]

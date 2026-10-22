@@ -1,0 +1,111 @@
+[
+  {
+    "目录": "PM_Demo_deepPad",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PM_Demo",
+    "替换文件": [
+      "demo/vendor/PM_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "PM_Demo_deepPad.bin",
+      "字节": 8984,
+      "sha256": "d018f05e894be4fbe59c8cf08689ba494e3e06850e90559f50970d66dc1ef5b8"
+    },
+    "说明": "`PM_MODE` 改成 `DEEP_PAD_WAKEUP`：深睡，PD0 接高电平唤醒。"
+  },
+  {
+    "目录": "PM_Demo_dbg",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PM_Demo",
+    "替换文件": [
+      "demo/vendor/PM_Demo/app.c"
+    ],
+    "bin": {
+      "文件": "PM_Demo_dbg.bin",
+      "字节": 9568,
+      "sha256": "9820677fb6f52b8826ccde7ac50ab51a5aad1662e00364f677523d69209cf371"
+    },
+    "说明": "默认 Suspend 模式加调试标记：白灯 = 在 Suspend 里，红灯 = 在 `rc_24m_cal()` 里，每圈打印 `cpu_sleep_wakeup()` 的返回值。用来弄清默认例程的闪灯节奏。"
+  },
+  {
+    "目录": "PM_Demo_cur_suspend",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PM_Demo",
+    "替换文件": [
+      "demo/vendor/PM_Demo/app.c"
+    ],
+    "bin": {
+      "文件": "PM_Demo_cur_suspend.bin",
+      "字节": 8788,
+      "sha256": "3c42b5fdb531709328b40ef7d5a866f9714c4e6a0309291911f316895ece411d"
+    },
+    "说明": "测电流用：`CURRENT_TEST` 改成 1，定时唤醒间隔都改成 60 s，`PM_MODE` 保持 `SUSPEND_32K_RC_WAKEUP`。"
+  },
+  {
+    "目录": "PM_Demo_cur_deepPad",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PM_Demo",
+    "替换文件": [
+      "demo/vendor/PM_Demo/app.c",
+      "demo/vendor/PM_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "PM_Demo_cur_deepPad.bin",
+      "字节": 8912,
+      "sha256": "d49cea4c408c82e661433cbdd350210d906dcee442bef3f6d2ad786652179de5"
+    },
+    "说明": "同上，`PM_MODE` = `DEEP_PAD_WAKEUP`。"
+  },
+  {
+    "目录": "PM_Demo_cur_deepRetPad",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PM_Demo",
+    "替换文件": [
+      "demo/vendor/PM_Demo/app.c",
+      "demo/vendor/PM_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "PM_Demo_cur_deepRetPad.bin",
+      "字节": 8912,
+      "sha256": "82e857ec328196cbd06ff5c3abc1818bd24ae51a6009f0cfbef6fce1fb1991f0"
+    },
+    "说明": "同上，`PM_MODE` = `DEEP_RET_PAD_WAKEUP`。"
+  },
+  {
+    "目录": "PM_Demo_cur_deep32k",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PM_Demo",
+    "替换文件": [
+      "demo/vendor/PM_Demo/app.c",
+      "demo/vendor/PM_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "PM_Demo_cur_deep32k.bin",
+      "字节": 8800,
+      "sha256": "5b0658211909c419da48279c9d82bf347c0638e4d403e4a45706fbe0bb1e1959"
+    },
+    "说明": "同上，`PM_MODE` = `DEEP_32K_RC_WAKEUP`。"
+  },
+  {
+    "目录": "PM_Demo_cur_deepRet32k",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "PM_Demo",
+    "替换文件": [
+      "demo/vendor/PM_Demo/app.c",
+      "demo/vendor/PM_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "PM_Demo_cur_deepRet32k.bin",
+      "字节": 8784,
+      "sha256": "d7fa8fcbeda7ca82ed84d3eb73a52f0de334ddd52c2a9a8ab129c4fbf50a94fb"
+    },
+    "说明": "同上，`PM_MODE` = `DEEP_RET_32K_RC_WAKEUP`。"
+  }
+]

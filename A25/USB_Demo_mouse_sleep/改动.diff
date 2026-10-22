@@ -1,0 +1,22 @@
+--- a/demo/vendor/USB_Demo/app_config.h
++++ b/demo/vendor/USB_Demo/app_config.h
+@@ -48,7 +48,7 @@
+ #endif
+ #define	 USB_MOUSE_SLEEP    6
+ 
+-#define	 USB_DEMO_TYPE		USB_MOUSE
++#define	 USB_DEMO_TYPE		USB_MOUSE_SLEEP
+ 
+ 
+ #if	(USB_DEMO_TYPE == USB_MOUSE)
+--- a/demo/vendor/USB_Demo/mouse_sleep_app.c
++++ b/demo/vendor/USB_Demo/mouse_sleep_app.c
+@@ -60,7 +60,7 @@
+ 		if(clock_time_exceed (tick_suspend_interval, 6000))
+ 		{
+ 			reg_wakeup_en &= (~FLD_WAKEUP_SRC_GPIO);
+-			cpu_sleep_wakeup (SUSPEND_MODE, PM_WAKEUP_CORE, 0);
++			cpu_sleep_wakeup (SUSPEND_MODE, PM_WAKEUP_CORE_USB, 0);	/* A25-3: B80 pm.h has no PM_WAKEUP_CORE */
+ 			tick_suspend_interval = clock_time()|1;
+ 			tick_suspend_interval2 = clock_time()|1;
+ 			tick_suspend_interval3 = clock_time()|1;

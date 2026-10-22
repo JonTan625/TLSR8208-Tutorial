@@ -1,0 +1,33 @@
+[
+  {
+    "目录": "b80_ble_sample_log",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_log.bin",
+      "字节": 45684,
+      "sha256": "ab1f459a80927100eb4551d92a5b4dc4f7547425ac3593b07916c433df58b061"
+    },
+    "说明": "只改 `drivers/printf.h` 的 `DEBUG_MODE`、`DEBUG_BUS` 两个宏，日志从 PD3 输出（GPIO 模拟串口，115200）。"
+  },
+  {
+    "目录": "b80_ble_sample_connlog",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_ble_sample",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_sample/app.c"
+    ],
+    "bin": {
+      "文件": "b80_ble_sample_connlog.bin",
+      "字节": 46356,
+      "sha256": "4a68e29aa24e8c252cd1def01804c3f8f80f1a0089140a7c1bb87bc480d7b80e"
+    },
+    "说明": "在上一个基础上，ble_sample 打印 MAC、连接参数、连接参数更新和断开原因（回调里只记录，主循环里打印）。"
+  }
+]

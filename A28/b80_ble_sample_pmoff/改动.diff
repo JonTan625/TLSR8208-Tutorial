@@ -1,0 +1,11 @@
+--- a/vendor/ble_sample/app_config.h
++++ b/vendor/ble_sample/app_config.h
+@@ -39,7 +39,7 @@
+ #define FIRMWARES_SIGNATURE_ENABLE     		 		0
+ 
+ /* Power Management */
+-#define BLE_APP_PM_ENABLE							1
++#define BLE_APP_PM_ENABLE							0
+ #define PM_DEEPSLEEP_ENABLE            				0 		//test connection power, should disable deepSleep
+ #define PM_DEEPSLEEP_RETENTION_ENABLE               1
+ 

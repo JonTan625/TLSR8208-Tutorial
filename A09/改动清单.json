@@ -1,0 +1,34 @@
+[
+  {
+    "目录": "Debug_Demo_wdboot",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "Debug_Demo",
+    "替换文件": [
+      "demo/vendor/Debug_Demo/app.c",
+      "demo/vendor/common/common/common.c"
+    ],
+    "bin": {
+      "文件": "Debug_Demo_wdboot.bin",
+      "字节": 8684,
+      "sha256": "9d8b2c040664e040d4ba0948c86f25cca77ee5a7739f9c96014350078ec41481"
+    },
+    "说明": "不调 `wd_32k_stop()`（注释掉 `common.c` 里那一行），开机次数记在 `DEEP_ANA_REG2`（0x3c，只有断电才复位），并把模拟寄存器 0x70 和 32K 定时器读数存进全局变量给 BDT 的 Tdebug 看。用来判断 32K 看门狗上电默认是不是开着。**读上电默认状态时，VCC 和 SWS 线要一起断开**，否则 SWS 倒灌供电，模拟寄存器会保留旧值。"
+  },
+  {
+    "目录": "Timer_Demo_gpioWidth",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "Timer_Demo",
+    "替换文件": [
+      "demo/vendor/TIMER_Demo/app.c",
+      "demo/vendor/TIMER_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "Timer_Demo_gpioWidth.bin",
+      "字节": 7620,
+      "sha256": "9305e680252264f9129924b273c78f89683b84f356ca7115a0a62e1f08ba0d52"
+    },
+    "说明": "Timer_Demo 改成 `TIMER_GPIO_WIDTH_MODE`，测量前先把 PA6 拉高 1 ms，给 Timer0 一个明确的起始下降沿（例程原来少了这一步）。"
+  }
+]

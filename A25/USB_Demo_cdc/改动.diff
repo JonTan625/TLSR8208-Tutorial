@@ -1,0 +1,11 @@
+--- a/demo/vendor/USB_Demo/app_config.h
++++ b/demo/vendor/USB_Demo/app_config.h
+@@ -48,7 +48,7 @@
+ #endif
+ #define	 USB_MOUSE_SLEEP    6
+ 
+-#define	 USB_DEMO_TYPE		USB_MOUSE
++#define	 USB_DEMO_TYPE		USB_CDC
+ 
+ 
+ #if	(USB_DEMO_TYPE == USB_MOUSE)

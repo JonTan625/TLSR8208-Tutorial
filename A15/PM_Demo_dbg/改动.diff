@@ -1,0 +1,43 @@
+--- a/demo/vendor/PM_Demo/app.c
++++ b/demo/vendor/PM_Demo/app.c
+@@ -83,6 +83,14 @@
+ 	gpio_set_output_en(LED2, 1);
+ 	gpio_set_input_en(LED2,0);			//disable input
+ #endif
++	/* A15-1 debug markers: LED3 (white) and LED4 (red) as outputs */
++	gpio_set_func(LED3, AS_GPIO);
++	gpio_set_output_en(LED3, 1);
++	gpio_set_input_en(LED3, 0);
++	gpio_set_func(LED4, AS_GPIO);
++	gpio_set_output_en(LED4, 1);
++	gpio_set_input_en(LED4, 0);
++	printf("[A15] user_init done\n");
+ #endif
+ 
+ #if ((PM_MODE == SUSPEND_COMPARATOR_WAKEUP)||(PM_MODE == DEEP_COMPARATOR_WAKEUP)||(PM_MODE == DEEP_RET_COMPARATOR_WAKEUP))
+@@ -331,7 +339,10 @@
+     //The more accurate this time, the faster the crystal will start.Calibration cycle depends on usage
+ 	//Before invoking this interface, ensure that the current system clock is not 24M rc.
+ 	//Otherwise, the system clock will fluctuate, affecting the normal operation of the chip.
++	gpio_write(LED4, 1);	/* A15-1 debug: red on = inside rc_24m_cal() */
+ 	rc_24m_cal();
++	gpio_write(LED4, 0);
++	gpio_write(LED3, 1);	/* A15-1 debug: white on = before / inside suspend */
+ 
+ #if(PM_MODE == IDLE_TIMER_WAKEUP)
+ 	//After stall wakes up, it does not enter the interrupt, but only continues to execute, and the interrupt mask needs to be cleared.
+@@ -403,7 +414,13 @@
+ 
+ #elif(PM_MODE==SUSPEND_32K_RC_WAKEUP||PM_MODE==SUSPEND_32K_XTAL_WAKEUP)
+ 
+-	cpu_sleep_wakeup(SUSPEND_MODE, PM_WAKEUP_TIMER, clock_time() + 1000*CLOCK_SYS_TIMER_CLK_1MS);
++	{
++		static unsigned int a15_loop = 0;
++		int a15_ws = cpu_sleep_wakeup(SUSPEND_MODE, PM_WAKEUP_TIMER, clock_time() + 1000*CLOCK_SYS_TIMER_CLK_1MS);
++		gpio_write(LED3, 0);	/* A15-1 debug: back from suspend */
++		gpio_toggle(LED2);
++		printf("[A15] loop %d, wakeup 0x%x\n", a15_loop++, a15_ws);
++	}
+ 
+ #elif(PM_MODE==SUSPEND_LONG_32K_RC_WAKEUP||PM_MODE==SUSPEND_LONG_32K_XTAL_WAKEUP)
+ 

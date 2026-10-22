@@ -1,0 +1,194 @@
+--- a/drivers/printf.c
++++ b/drivers/printf.c
+@@ -50,9 +50,12 @@
+  * @return     none.
+  */
+ _attribute_data_reload_ unsigned char init_flag = 1;	//Add by BLE group.
+-_attribute_ram_code_sec_noinline_  void io_putchar(unsigned char byte){
++/* A22-1: moved from ram_code to flash to fit DLE slave RAM (only 8 B left with DEBUG_MODE 0).
++ * Running from flash the polling loop is slower and the original "t2 = t1" relative wait accumulated the
++ * overshoot of every bit (bytes came out corrupted), so bit edges are now scheduled on absolute tick times. */
++__attribute__((noinline))  void io_putchar(unsigned char byte){
+ 	unsigned char j = 0;
+-	unsigned int t1 = 0,t2 = 0;
++	unsigned int t1 = 0;
+ 	if(init_flag==1)
+ 	{
+ 		TX_PIN_GPIO_EN();
+@@ -86,9 +89,8 @@
+ 	t1 = read_reg32(0x740);
+ 	for(j = 0;j<10;j++)
+ 	{
+-		t2 = t1;
+-		while(t1 - t2 < BIT_INTERVAL){
+-			t1  = read_reg32(0x740);
++		t1 += BIT_INTERVAL;
++		while((int)(read_reg32(0x740) - t1) < 0){
+ 		}
+ #if (MCU_CORE_B80)
+ 		write_reg8(TX_PIN_OUTPUT_REG,bit[j]);        //send bit0
+--- a/drivers/printf.h
++++ b/drivers/printf.h
+@@ -24,14 +24,14 @@
+ #include "gpio.h"
+ #pragma once
+ 
+-#define DEBUG_MODE 0
++#define DEBUG_MODE 1
+ 
+ #if(DEBUG_MODE==1)
+ 
+ #define  DEBUG_IO		1
+ #define  DEBUG_USB		2
+ 
+-#define  DEBUG_BUS  	0
++#define  DEBUG_BUS  	1
+ 
+ #if(DEBUG_BUS==DEBUG_IO)
+ #define PRINT_BAUD_RATE             		115200   	//1M baud rate,should Not bigger than 1Mb/s
+--- a/vendor/ble_feature_test/feature_DLE_slave/app.c
++++ b/vendor/ble_feature_test/feature_DLE_slave/app.c
+@@ -51,12 +51,21 @@
+ 
+ u16  final_MTU_size = 23;
+ 
+-#define TEST_DATA_LEN		255
++#define TEST_DATA_LEN		244		//A22-1: was 255; notify payload is at most MTU_SIZE_SETTING(247) - 3, frees RAM for DEBUG_MODE
+ 
+ u8	app_test_data[TEST_DATA_LEN];
+ 
+ u32 app_test_data_tick = 0;
+ 
++/* A22-1 verification log: callbacks only record, main_loop prints */
++volatile u8  a22_log_flag;	//BIT(0) DLE exchange, BIT(1) MTU exchange, BIT(2) conn para update
++tlk_contr_evt_dataLenExg_t a22_dle;
++volatile u16 a22_peer_mtu, a22_eff_mtu;
++volatile u16 a22_upd_interval, a22_upd_latency, a22_upd_timeout;
++/* A22-1 throughput test: phone writes 'T' to the SPP c2s characteristic, slave pushes notify for 10 s */
++u8  a22_thr_flag;
++u32 a22_thr_tick, a22_thr_bytes, a22_thr_pkts;
++
+ 
+ 
+ u32	advertise_begin_tick;
+@@ -161,6 +170,31 @@
+ 	dle_started_flg = 1;
+ 
+ 	app_test_data_tick = clock_time() | 1;
++
++	memcpy(&a22_dle, p, sizeof(a22_dle));
++	a22_log_flag |= BIT(0);
++}
++
++int app_host_event_callback (u32 h, u8 *para, int n)
++{
++	(void)n;
++	if((h & 0xFF) == GAP_EVT_ATT_EXCHANGE_MTU){
++		gap_gatt_mtuSizeExchangeEvt_t *pm = (gap_gatt_mtuSizeExchangeEvt_t *)para;
++		a22_peer_mtu = pm->peer_MTU;
++		a22_eff_mtu = pm->effective_MTU;
++		a22_log_flag |= BIT(1);
++	}
++	return 0;
++}
++
++void task_conn_para_update(u8 e, u8 *p, int n)
++{
++	(void)e;(void)n;
++	tlk_contr_evt_connParaUpdate_t *pEvt = (tlk_contr_evt_connParaUpdate_t *)p;
++	a22_upd_interval = pEvt->conn_interval;
++	a22_upd_latency = pEvt->conn_latency;
++	a22_upd_timeout = pEvt->conn_timeout;
++	a22_log_flag |= BIT(2);
+ }
+ 
+ /**
+@@ -266,6 +300,8 @@
+ 	  extension feature can not be used.  So in data length extension application, RX MTU size must be enlarged when initialization.
+ 	 */
+ 	blc_att_setRxMtuSize(MTU_SIZE_SETTING);
++	blc_gap_registerHostEventHandler( app_host_event_callback );
++	blc_gap_setEventMask( GAP_EVT_MASK_ATT_EXCHANGE_MTU );
+ 
+ 	/* L2CAP Initialization */
+ 	blc_l2cap_register_handler(blc_l2cap_packet_receive);
+@@ -317,6 +353,7 @@
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_CONNECT, &task_connect);
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_TERMINATE, &task_terminate);
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_DATA_LENGTH_EXCHANGE, &task_dle_exchange);
++	bls_app_registerEventCallback (BLT_EV_FLAG_CONN_PARA_UPDATE, &task_conn_para_update);
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_SUSPEND_EXIT, &task_suspend_exit);
+ 
+ 
+@@ -526,6 +563,14 @@
+ {
+ 	rf_packet_att_data_t *p = (rf_packet_att_data_t*)para;
+ 	u8 len = p->l2capLen - 3;
++	if(len > 0 && p->dat[0] == 'T' && !a22_thr_flag)
++	{
++		a22_thr_flag = 1;
++		a22_thr_tick = clock_time();
++		a22_thr_bytes = 0;
++		a22_thr_pkts = 0;
++		return 0;
++	}
+ 	if(len > 0)
+ 	{
+ 		printf("RF_RX len: %d\nc2s:write data: %d\n", p->rf_len, len);
+@@ -545,6 +590,37 @@
+  */
+ void feature_sdle_test_mainloop(void)
+ {
++	if(a22_log_flag){
++		u32 r = irq_disable();
++		u8 f = a22_log_flag;
++		a22_log_flag = 0;
++		irq_restore(r);
++		if(f & BIT(0)){
++			printf("[A22][DLE] effective rx %d tx %d, local rx %d tx %d, remote rx %d tx %d\n",
++					a22_dle.connEffectiveMaxRxOctets, a22_dle.connEffectiveMaxTxOctets, a22_dle.connMaxRxOctets,
++					a22_dle.connMaxTxOctets, a22_dle.connRemoteMaxRxOctets, a22_dle.connRemoteMaxTxOctets);
++		}
++		if(f & BIT(1)){
++			printf("[A22][MTU] peer %d, effective %d\n", a22_peer_mtu, a22_eff_mtu);
++		}
++		if(f & BIT(2)){
++			printf("[A22][UPD] interval %d x1.25ms, latency %d, timeout %d x10ms\n", a22_upd_interval, a22_upd_latency, a22_upd_timeout);
++		}
++	}
++
++	if(a22_thr_flag){
++		u16 thr_len = blc_att_getEffectiveMtuSize(BLS_CONN_HANDLE) - 3;
++		while(BLE_SUCCESS == blc_gatt_pushHandleValueNotify (BLS_CONN_HANDLE, SPP_SERVER_TO_CLIENT_DP_H, &app_test_data[0], thr_len)){
++			a22_thr_bytes += thr_len;
++			a22_thr_pkts++;
++		}
++		if(clock_time_exceed(a22_thr_tick, 10000000)){
++			a22_thr_flag = 0;
++			printf("[A22][THR] 10 s: %d notify, %d bytes, payload %d\n", a22_thr_pkts, a22_thr_bytes, thr_len);
++		}
++		return;
++	}
++
+ 	if(connect_event_occurTick && clock_time_exceed(connect_event_occurTick, 1500000)){  //1.5 S after connection established
+ 		connect_event_occurTick = 0;
+ 
+@@ -571,6 +647,7 @@
+ 		{
+ 			app_test_data_tick = clock_time() | 1;
+ 			app_test_data[0]++;
++			printf("[A22][NTF] %d bytes, first byte %d\n", blc_att_getEffectiveMtuSize(BLS_CONN_HANDLE)-3, app_test_data[0] - 1);
+ 		}
+ 	}
+ }
+--- a/vendor/ble_feature_test/feature_config.h
++++ b/vendor/ble_feature_test/feature_config.h
+@@ -72,7 +72,7 @@
+ 
+ 
+ 
+-#define FEATURE_TEST_MODE								TEST_MD_MASTER
++#define FEATURE_TEST_MODE								TEST_LL_DATA_LENGTH_EXTENSION_SLAVE
+ 
+ 
+ 

@@ -1,0 +1,33 @@
+--- a/vendor/ble_slave_2_4g/2_4g_test/app_tpll_prx.c
++++ b/vendor/ble_slave_2_4g/2_4g_test/app_tpll_prx.c
+@@ -148,6 +148,7 @@
+ 	}
+ 
+     u32 r = irq_disable();  //must disable irq.
++    gpio_write(GPIO_2P4G_WINDOW, 1);
+     tpll_config_init(4);
+ 
+     TPLL_PRXTrig();
+@@ -173,6 +174,7 @@
+         }
+     }
+ 
++    gpio_write(GPIO_2P4G_WINDOW, 0);
+     irq_restore(r);
+ 
+     return 0;
+--- a/vendor/ble_slave_2_4g/app_config.h
++++ b/vendor/ble_slave_2_4g/app_config.h
+@@ -189,6 +189,12 @@
+ 	#define	PA7_OUTPUT_ENABLE		1
+ #endif
+ 
++/* A24-1 验证：PB3（J6 第 3 脚）在 2.4G 窗口内输出高电平，供示波器观察时间片 */
++#define	GPIO_2P4G_WINDOW		GPIO_PB3
++#define PB3_FUNC				AS_GPIO
++#define PB3_INPUT_ENABLE		0
++#define	PB3_OUTPUT_ENABLE		1
++
+ 
+ 
+ 

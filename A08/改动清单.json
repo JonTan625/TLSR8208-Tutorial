@@ -1,0 +1,33 @@
+[
+  {
+    "目录": "Debug_Demo_irq1ms_pb3",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "Debug_Demo",
+    "替换文件": [
+      "demo/vendor/Debug_Demo/app.c",
+      "demo/vendor/Debug_Demo/main.c"
+    ],
+    "bin": {
+      "文件": "Debug_Demo_irq1ms_pb3.bin",
+      "字节": 8972,
+      "sha256": "bcb10a2074915384120417ffa69aea7d86be44339d42f523b84cd63221373196"
+    },
+    "说明": "Debug_Demo 加一个 Timer0 每 1 ms 的中断，中断里只清标志、计数 `timer0_irq_cnt`，进出中断时把 PB3 拉高、拉低。用来看中断打断 GPIO 模拟串口后 printf 的乱码，PB3 可以接示波器看中断占了多久。"
+  },
+  {
+    "目录": "UART_Demo_ndma",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "UART_Demo",
+    "替换文件": [
+      "demo/vendor/UART_Demo/UART_V1.0/UART_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "UART_Demo_ndma.bin",
+      "字节": 9192,
+      "sha256": "a236e47e57aa5ab2a2fc44caaa38764b7270415d50d327bf6c7f50bd856487f4"
+    },
+    "说明": "UART_Demo 的 `UART_MODE` 从 `UART_DMA` 改成 `UART_NDMA`，非 DMA 模式收发回传。"
+  }
+]

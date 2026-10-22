@@ -1,0 +1,11 @@
+--- a/demo/vendor/UART_Demo/UART_V1.0/UART_Demo/app_config.h
++++ b/demo/vendor/UART_Demo/UART_V1.0/UART_Demo/app_config.h
+@@ -70,7 +70,7 @@
+ #define UART_DMA  		 1     //uart use dma
+ #define UART_NDMA  		 2     //uart not use dma
+ #define UART_SOFTWARE_RX 3     //software simulates the UART receiving function,occupy an GPIO interrupt and a hardware timer
+-#define UART_MODE	 	UART_DMA
++#define UART_MODE	 	UART_NDMA
+ 
+ 
+ /***********set uart_dma interrupt type*************/

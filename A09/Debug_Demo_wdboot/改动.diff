@@ -1,0 +1,35 @@
+--- a/demo/vendor/Debug_Demo/app.c
++++ b/demo/vendor/Debug_Demo/app.c
+@@ -23,8 +23,21 @@
+  *******************************************************************************************************/
+ #include "app_config.h"
+ 
++/* A09 验证：开机计数存在 DEEP_ANA_REG2（0x3c），这个寄存器只有断电才复位（上电初值 0x0f，pm.h:49–58），
++ * 看门狗复位、芯片复位都不清。冷上电后读 0x3c：1 = 只开机一次，2 = 中间复位过一次，以此类推 */
++volatile unsigned char wdboot_cnt;		//本次开机后的计数，供 Tdebug 读
++volatile unsigned char wdboot_reg70;	//开机时读到的模拟寄存器 0x70
++volatile unsigned int  wdboot_32k_tick;	//开机时读到的 32K 定时器
++
+ void user_init(void)
+ {
++	unsigned char cnt = analog_read(DEEP_ANA_REG2);
++	cnt = (cnt == 0x0f) ? 1 : (cnt + 1);
++	analog_write(DEEP_ANA_REG2, cnt);
++	wdboot_cnt = cnt;
++	wdboot_reg70 = analog_read(0x70);
++	wdboot_32k_tick = pm_get_32k_tick();
++
+ 	sleep_ms(1000);
+ 	//1.init the LED pin,for indication
+     gpio_set_func(LED1, AS_GPIO);
+--- a/demo/vendor/common/common/common.c
++++ b/demo/vendor/common/common/common.c
+@@ -182,7 +182,7 @@
+ #endif
+ 
+ #if (MCU_CORE_B80 || MCU_CORE_B80B || MCU_CORE_B89 || MCU_CORE_TC321X || MCU_CORE_TC1211 || MCU_CORE_TC122X || MCU_CORE_TC123X)
+-    wd_32k_stop();
++//    wd_32k_stop();	//A09 验证：不关 32K 看门狗，看上电默认状态
+ #endif
+ 
+ #if (defined(MCU_CORE_TC321X) || defined(MCU_CORE_TC123X))

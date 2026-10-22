@@ -1,0 +1,287 @@
+--- a/drivers/printf.h
++++ b/drivers/printf.h
+@@ -24,14 +24,14 @@
+ #include "gpio.h"
+ #pragma once
+ 
+-#define DEBUG_MODE 0
++#define DEBUG_MODE 1
+ 
+ #if(DEBUG_MODE==1)
+ 
+ #define  DEBUG_IO		1
+ #define  DEBUG_USB		2
+ 
+-#define  DEBUG_BUS  	0
++#define  DEBUG_BUS  	1
+ 
+ #if(DEBUG_BUS==DEBUG_IO)
+ #define PRINT_BAUD_RATE             		115200   	//1M baud rate,should Not bigger than 1Mb/s
+--- a/vendor/ble_sample/app.c
++++ b/vendor/ble_sample/app.c
+@@ -81,9 +81,13 @@
+  * @param[in]  n - data length of event
+  * @return     none
+  */
++/* A18-1 verification log: callback only records, main_loop prints */
++volatile u8 a18_log_flag;	//BIT(0) direct adv timeout, switched to undirected
++
+ void app_switch_to_undirected_adv(u8 e, u8 *p, int n)
+ {
+ 	(void)e;(void)p;(void)n;
++	a18_log_flag |= BIT(0);
+ 	bls_ll_setAdvParam( MY_ADV_INTERVAL_MIN, MY_ADV_INTERVAL_MAX,
+ 						ADV_TYPE_CONNECTABLE_UNDIRECTED, app_own_address_type,
+ 						0,  NULL,
+@@ -104,11 +108,65 @@
+  * @param[in]  n - data length of event
+  * @return     none
+  */
++/* A16-2 verification log: callbacks only record, main_loop prints */
++volatile u8  a16_log_flag;	//BIT(0) connect, BIT(1) conn para update, BIT(2) terminate
++volatile u16 a16_conn_interval, a16_conn_latency, a16_conn_timeout;
++volatile u16 a16_upd_interval, a16_upd_latency, a16_upd_timeout;
++volatile u8  a16_term_reason;
++
++/* A18-1 verification log: host events print directly, same as feature_gatt_security/app.c */
++int app_host_event_callback (u32 h, u8 *para, int n)
++{
++	(void)n;
++	switch(h & 0xFF)
++	{
++		case GAP_EVT_SMP_PAIRING_BEGIN:
++			printf("[A18][SMP] pairing begin\n");
++			break;
++		case GAP_EVT_SMP_PAIRING_SUCCESS:
++		{
++			gap_smp_pairingSuccessEvt_t* pe = (gap_smp_pairingSuccessEvt_t*)para;
++			printf("[A18][SMP] pairing success, bonding %d, save result %d\n", pe->bonding, pe->bonding_result);
++		}
++			break;
++		case GAP_EVT_SMP_PAIRING_FAIL:
++		{
++			gap_smp_pairingFailEvt_t* pe = (gap_smp_pairingFailEvt_t*)para;
++			printf("[A18][SMP] pairing failed, reason 0x%x\n", pe->reason);
++		}
++			break;
++		case GAP_EVT_SMP_CONN_ENCRYPTION_DONE:
++		{
++			gap_smp_connEncDoneEvt_t* pe = (gap_smp_connEncDoneEvt_t*)para;
++			printf("[A18][SMP] encryption done, %s\n", pe->re_connect == SMP_STANDARD_PAIR ? "first pairing" : "reconnect");
++		}
++			break;
++		default:
++			break;
++	}
++	return 0;
++}
++
++void task_conn_para_update(u8 e, u8 *p, int n)
++{
++	(void)e;(void)n;
++	tlk_contr_evt_connParaUpdate_t *pEvt = (tlk_contr_evt_connParaUpdate_t *)p;
++	a16_upd_interval = pEvt->conn_interval;
++	a16_upd_latency = pEvt->conn_latency;
++	a16_upd_timeout = pEvt->conn_timeout;
++	a16_log_flag |= BIT(1);
++}
++
+ void task_connect(u8 e, u8 *p, int n)
+ {
+ 
+ 	bls_l2cap_requestConnParamUpdate (CONN_INTERVAL_10MS, CONN_INTERVAL_10MS, 99, CONN_TIMEOUT_4S);  // 1 S
+ 
++	a16_conn_interval = bls_ll_getConnectionInterval();
++	a16_conn_latency = bls_ll_getConnectionLatency();
++	a16_conn_timeout = bls_ll_getConnectionTimeout();
++	a16_log_flag |= BIT(0);
++
+ 	#if (PM_DEEPSLEEP_ENABLE)
+ 		latest_user_event_tick = clock_time();
+ 		device_in_connection_state = 1;
+@@ -134,6 +192,8 @@
+ 	#endif
+ 
+ 	tlk_contr_evt_terminate_t *pEvt = (tlk_contr_evt_terminate_t *)p;
++	a16_term_reason = pEvt->terminate_reason;
++	a16_log_flag |= BIT(2);
+ 	if(pEvt->terminate_reason == HCI_ERR_CONN_TIMEOUT){
+ 
+ 	}
+@@ -360,6 +420,7 @@
+ 	u8  mac_random_static[6];
+ 	/* for 512K Flash, flash_sector_mac_address equals to 0x7F000, for 128K  Flash, flash_sector_mac_address equals to 0x1F000 */
+ 	blc_initMacAddress(flash_sector_mac_address, mac_public, mac_random_static);
++	printf("[A16][MAC] public %x:%x:%x:%x:%x:%x\n", mac_public[5], mac_public[4], mac_public[3], mac_public[2], mac_public[1], mac_public[0]);
+ 
+ 
+ 	#if(BLE_DEVICE_ADDRESS_TYPE == BLE_DEVICE_ADDRESS_PUBLIC)
+@@ -406,6 +467,11 @@
+ 												    	//and this func must call before bls_smp_enableParing
+ 		blc_smp_peripheral_init();
+ 		blc_smp_setSecurityLevel(Unauthenticated_Pairing_with_Encryption);
++		blc_gap_registerHostEventHandler( app_host_event_callback );
++		blc_gap_setEventMask( GAP_EVT_MASK_SMP_PAIRING_BEGIN   |  \
++							  GAP_EVT_MASK_SMP_PAIRING_SUCCESS |  \
++							  GAP_EVT_MASK_SMP_PAIRING_FAIL    |  \
++							  GAP_EVT_MASK_SMP_CONN_ENCRYPTION_DONE );
+ 
+ 	#else
+ 		blc_smp_setSecurityLevel(No_Security);
+@@ -460,6 +526,7 @@
+ 			}
+ 
+ 			//it is recommended that direct ADV only last for several seconds, then switch to undirected adv
++			printf("[A18][ADV] directed low duty, peer addr type %d, irk valid %d\n", bondInfo.peer_addr_type, blc_app_isIrkValid(bondInfo.peer_irk));
+ 			bls_ll_setAdvDuration(MY_DIRECT_ADV_TIME, 1);
+ 			bls_app_registerEventCallback (BLT_EV_FLAG_ADV_DURATION_TIMEOUT, &app_switch_to_undirected_adv);
+ 
+@@ -474,6 +541,7 @@
+ 											 ADV_FP_NONE);
+ 		}
+ 
++	printf("[A18][ADV] bonded devices %d, adv type %s, status 0x%x\n", bond_number, bond_number ? "directed" : "undirected", adv_param_status);
+ 	if(adv_param_status != BLE_SUCCESS){
+ 		printf("[APP][INI] ADV parameters error 0x%x!!!\n", adv_param_status);
+ 	}
+@@ -488,6 +556,7 @@
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_CONNECT, &task_connect);
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_TERMINATE, &task_terminate);
+ 	bls_app_registerEventCallback (BLT_EV_FLAG_SUSPEND_EXIT, &task_suspend_exit);
++	bls_app_registerEventCallback (BLT_EV_FLAG_CONN_PARA_UPDATE, &task_conn_para_update);
+ 
+ 
+ 	///////////////////// Power Management initialization///////////////////
+@@ -708,6 +777,34 @@
+ 	#endif
+ 
+ 
++	static u32 my_demo_tick = 0;
++	static u32 my_demo_cnt = 0;
++	if(blc_ll_getCurrentState() == BLS_LINK_STATE_CONN && clock_time_exceed(my_demo_tick, 1000000)){
++		my_demo_tick = clock_time();
++		my_demoCntNotify(my_demo_cnt++);
++	}
++
++	if(a18_log_flag){
++		a18_log_flag = 0;
++		printf("[A18][ADV] direct adv 10 s timeout, switched to undirected\n");
++	}
++
++	if(a16_log_flag){
++		u32 r = irq_disable();
++		u8 f = a16_log_flag;
++		a16_log_flag = 0;
++		irq_restore(r);
++		if(f & BIT(0)){
++			printf("[A16][CONN] connected: interval %d x1.25ms, latency %d, timeout %d x10ms\n", a16_conn_interval, a16_conn_latency, a16_conn_timeout);
++		}
++		if(f & BIT(1)){
++			printf("[A16][UPD] conn para update: interval %d x1.25ms, latency %d, timeout %d x10ms\n", a16_upd_interval, a16_upd_latency, a16_upd_timeout);
++		}
++		if(f & BIT(2)){
++			printf("[A16][TERM] terminate reason 0x%x\n", a16_term_reason);
++		}
++	}
++
+ 	////////////////////////////////////// PM Process /////////////////////////////////
+ 	blt_pm_proc();
+ 
+--- a/vendor/ble_sample/app_att.c
++++ b/vendor/ble_sample/app_att.c
+@@ -22,6 +22,7 @@
+  *
+  *******************************************************************************************************/
+ #include "tl_common.h"
++#include "drivers.h"
+ #include "stack/ble/ble.h"
+ #include "app_att.h"
+ 
+@@ -207,6 +208,47 @@
+ // HID External Report Reference Descriptor for report map
+ static u16 extServiceUUID;
+ 
++//// my demo service (A17) ////
++#define MY_UUID(n)  n,0x00,0x6E,0x2B,0x5A,0x1C,0x4B,0x8E,0x9D,0x3F,0x27,0x61,0x00,0x00,0xA8,0x6F
++static const u8 my_demoServiceUUID[16] = {MY_UUID(0x01)};
++static const u8 my_demoLedUUID[16]     = {MY_UUID(0x02)};
++static const u8 my_demoCntUUID[16]     = {MY_UUID(0x03)};
++static u8 myLedVal[1] = {0};
++static u8 myCntVal[4] = {0};
++static u8 myCntCCC[2] = {0};
++
++static const u8 my_demoLedCharVal[19] = {
++	CHAR_PROP_READ | CHAR_PROP_WRITE | CHAR_PROP_WRITE_WITHOUT_RSP,
++	U16_LO(MY_LED_DP_H), U16_HI(MY_LED_DP_H),
++	MY_UUID(0x02)
++};
++static const u8 my_demoCntCharVal[19] = {
++	CHAR_PROP_READ | CHAR_PROP_NOTIFY,
++	U16_LO(MY_CNT_DP_H), U16_HI(MY_CNT_DP_H),
++	MY_UUID(0x03)
++};
++
++int my_demoLedWrite(void *p)                     // 写回调
++{
++	rf_packet_att_data_t *pw = (rf_packet_att_data_t *)p;
++	int len = pw->l2capLen - 3;
++	if(len >= 1){
++		myLedVal[0] = pw->dat[0];                // 有回调时协议栈不自动拷，自己存
++		#if (UI_LED_ENABLE)
++			gpio_write(GPIO_LED_WHITE, myLedVal[0] ? LED_ON_LEVEL : !LED_ON_LEVEL);
++		#endif
++	}
++	return 0;
++}
++
++void my_demoCntNotify(u32 cnt)                   // 手机打开了 Notify 才发
++{
++	if(myCntCCC[0] & 0x01){
++		memcpy(myCntVal, &cnt, 4);
++		blc_gatt_pushHandleValueNotify(BLS_CONN_HANDLE, MY_CNT_DP_H, myCntVal, 4);
++	}
++}
++
+ #if (BLE_OTA_SERVER_ENABLE)
+ /////////////////////////////////////////////////////////
+ static const  u8 my_OtaServiceUUID[16]				= WRAPPING_BRACES(TELINK_OTA_UUID_SERVICE);
+@@ -414,6 +456,14 @@
+ 	{0,ATT_PERMISSIONS_READ,2,sizeof(my_batVal),(u8*)(&my_batCharUUID), 	(u8*)(my_batVal), 0},	//value
+ 	{0,ATT_PERMISSIONS_RDWR,2,sizeof(batteryValueInCCC),(u8*)(&clientCharacterCfgUUID), 	(u8*)(batteryValueInCCC), 0},	//value
+ 
++	//// my demo service (A17) ////
++	{MY_CNT_CCB_H - MY_PS_H + 1,ATT_PERMISSIONS_READ,2,16,(u8*)(&my_primaryServiceUUID), (u8*)(&my_demoServiceUUID), 0},
++	{0,ATT_PERMISSIONS_READ,2,sizeof(my_demoLedCharVal),(u8*)(&my_characterUUID), (u8*)(my_demoLedCharVal), 0},
++	{0,ATT_PERMISSIONS_RDWR,16,sizeof(myLedVal),(u8*)(&my_demoLedUUID), (u8*)(myLedVal), &my_demoLedWrite},
++	{0,ATT_PERMISSIONS_READ,2,sizeof(my_demoCntCharVal),(u8*)(&my_characterUUID), (u8*)(my_demoCntCharVal), 0},
++	{0,ATT_PERMISSIONS_READ,16,sizeof(myCntVal),(u8*)(&my_demoCntUUID), (u8*)(myCntVal), 0},
++	{0,ATT_PERMISSIONS_RDWR,2,sizeof(myCntCCC),(u8*)(&clientCharacterCfgUUID), (u8*)(myCntCCC), 0},
++
+ 	#if (BLE_OTA_SERVER_ENABLE)
+ 	////////////////////////////////////// OTA /////////////////////////////////////////////////////
+ 	// 002e - 0031
+--- a/vendor/ble_sample/app_att.h
++++ b/vendor/ble_sample/app_att.h
+@@ -118,6 +118,13 @@
+ 	BATT_LEVEL_INPUT_CD_H,					//UUID: 2803, 	VALUE:  			Prop: Read | Notify
+ 	BATT_LEVEL_INPUT_DP_H,					//UUID: 2A19 	VALUE: batVal
+ 	BATT_LEVEL_INPUT_CCB_H,					//UUID: 2902, 	VALUE: batValCCC
++	//// my demo service (A17) ////
++	MY_PS_H,          // 服务声明，128 位 UUID
++	MY_LED_CD_H,      // LED 特征声明：Read | Write | Write without rsp
++	MY_LED_DP_H,      // LED 特征值，1 字节
++	MY_CNT_CD_H,      // 计数特征声明：Read | Notify
++	MY_CNT_DP_H,      // 计数特征值，4 字节
++	MY_CNT_CCB_H,     // 计数的 CCC
+ 
+ 	#if (BLE_OTA_SERVER_ENABLE)
+ 	//// Ota ////
+@@ -145,6 +152,8 @@
+  */
+ void my_gatt_init (void);
+ 
++void my_demoCntNotify(u32 cnt);
++
+ 
+ 
+ #endif /* APP_ATT_H_ */

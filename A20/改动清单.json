@@ -1,0 +1,51 @@
+[
+  {
+    "目录": "b80_master_log",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_master",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_master/blm_host.c"
+    ],
+    "bin": {
+      "文件": "b80_master_log.bin",
+      "字节": 33604,
+      "sha256": "320c63e54dee50afc9d4c22a32a604544d9381615945256357d15ea15273d571"
+    },
+    "说明": "ble_master 打印名字以 \"eSa\" 开头的广播的 RSSI（每秒最多一次）、连接建立和断开原因。"
+  },
+  {
+    "目录": "b80_master_rxcnt",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_master",
+    "替换文件": [
+      "drivers/printf.h",
+      "vendor/ble_master/blm_host.c"
+    ],
+    "bin": {
+      "文件": "b80_master_rxcnt.bin",
+      "字节": 33684,
+      "sha256": "de4f14d3d0a358dbea6686825aefc93cba594ea7dc86116152df37018571e884"
+    },
+    "说明": "在上一个基础上加 4 个全局变量（收到的广播总数、最强 RSSI、\"eSa\" 广播数和最近一次的 RSSI），用 BDT 的 Tdebug 读，判断板子收不收得到广播。"
+  },
+  {
+    "目录": "b80_master_custom_pair",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_master",
+    "替换文件": [
+      "vendor/ble_master/app_config.h",
+      "vendor/ble_master/blm_host.c",
+      "vendor/common/custom_pair.h"
+    ],
+    "bin": {
+      "文件": "b80_master_custom_pair.bin",
+      "字节": 29316,
+      "sha256": "5d7aea36bbf5cd2c0c950c5d456526da4bc239cbb446b7fef2436cb313419a0a"
+    },
+    "说明": "正文里的「自定义配对」组合：`BLE_HOST_SMP_ENABLE` 改成 0、`ACL_CENTRAL_CUSTOM_PAIR_ENABLE` 改成 1，并把 `blm_host.c` 里的 `pCon` 改成 `pConnEvt`（不改就编译报错）。**只编译、没有上板**。"
+  }
+]

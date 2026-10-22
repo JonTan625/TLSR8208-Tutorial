@@ -1,0 +1,48 @@
+[
+  {
+    "目录": "USB_Demo_keyboard",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "USB_Demo",
+    "替换文件": [
+      "demo/vendor/USB_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "USB_Demo_keyboard.bin",
+      "字节": 9104,
+      "sha256": "39c0c824b6fe2498e0a76f21fa570881eb216a2d3d38208b673947675e368853"
+    },
+    "说明": "`USB_DEMO_TYPE` 改成 `USB_KEYBOARD`。"
+  },
+  {
+    "目录": "USB_Demo_cdc",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "USB_Demo",
+    "替换文件": [
+      "demo/vendor/USB_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "USB_Demo_cdc.bin",
+      "字节": 9116,
+      "sha256": "2e9220ced4c11cba911a932896d6c4336be7cedef6bc89cb2d5174d970542811"
+    },
+    "说明": "`USB_DEMO_TYPE` 改成 `USB_CDC`（虚拟串口回传）。"
+  },
+  {
+    "目录": "USB_Demo_mouse_sleep",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "USB_Demo",
+    "替换文件": [
+      "demo/vendor/USB_Demo/app_config.h",
+      "demo/vendor/USB_Demo/mouse_sleep_app.c"
+    ],
+    "bin": {
+      "文件": "USB_Demo_mouse_sleep.bin",
+      "字节": 10644,
+      "sha256": "36d3a5362ece6a510d065ca872382e710c66831d6b4eed55b3153dad6195c0cf"
+    },
+    "说明": "`USB_DEMO_TYPE` 改成 `USB_MOUSE_SLEEP`，并把 `mouse_sleep_app.c` 里 B80 没有的 `PM_WAKEUP_CORE` 改成 `PM_WAKEUP_CORE_USB`（不改就编译报错）。"
+  }
+]

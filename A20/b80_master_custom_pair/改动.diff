@@ -1,0 +1,33 @@
+--- a/vendor/ble_master/app_config.h
++++ b/vendor/ble_master/app_config.h
+@@ -29,7 +29,7 @@
+  *  @brief  Feature select in BLE Sample project
+  */
+ #define FLASH_SIZE_OPTION							FLASH_SIZE_OPTION_512K //very important, user need confirm !!!
+-#define BLE_HOST_SMP_ENABLE				    1  //Master SMP strongly recommended enabled
++#define BLE_HOST_SMP_ENABLE				    0  //Master SMP strongly recommended enabled
+ #define ACL_CENTRAL_SIMPLE_SDP_ENABLE		1  //simple service discovery
+ 
+ /**
+--- a/vendor/ble_master/blm_host.c
++++ b/vendor/ble_master/blm_host.c
+@@ -225,7 +225,7 @@
+ 			if(blm_manPair.manual_pair && blm_manPair.mac_type == pConnEvt->peerAddrType && !memcmp(blm_manPair.mac, pConnEvt->peerAddr, 6)){
+ 				blm_manPair.manual_pair = 0;
+ 
+-				user_tbl_slave_mac_add(pCon->peerAddrType, pCon->peerAddr);
++				user_tbl_slave_mac_add(pConnEvt->peerAddrType, pConnEvt->peerAddr);
+ 			}
+ 		#endif
+ 
+--- a/vendor/common/custom_pair.h
++++ b/vendor/common/custom_pair.h
+@@ -25,7 +25,7 @@
+ #define BLM_PAIR_H_
+ 
+ #ifndef ACL_CENTRAL_CUSTOM_PAIR_ENABLE
+-#define ACL_CENTRAL_CUSTOM_PAIR_ENABLE					0
++#define ACL_CENTRAL_CUSTOM_PAIR_ENABLE					1
+ #endif
+ 
+ 

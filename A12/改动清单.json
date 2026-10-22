@@ -1,0 +1,32 @@
+[
+  {
+    "目录": "ADC_Demo_linlog",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "ADC_Demo",
+    "替换文件": [
+      "demo/vendor/ADC_Demo/ADC_V1.0/ADC_Demo/app.c"
+    ],
+    "bin": {
+      "文件": "ADC_Demo_linlog.bin",
+      "字节": 9096,
+      "sha256": "cd0614fc684cb1af7eb2015d20121576f2d35a3a26d5aa972ac8ffc71e990581"
+    },
+    "说明": "ADC_Demo（测 PB0）每次采样打印一行 `ADC <原始码> <毫伏>`，开机打印 OTP 里的 Vref 校准值 `ADC_INIT vref=… off=…`。给 `tools/a12_sweep.ps1` 用。"
+  },
+  {
+    "目录": "ADC_Demo_nocal",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "ADC_Demo",
+    "替换文件": [
+      "demo/vendor/ADC_Demo/ADC_V1.0/ADC_Demo/app.c"
+    ],
+    "bin": {
+      "文件": "ADC_Demo_nocal.bin",
+      "字节": 7812,
+      "sha256": "c7605f199f8227296a8795a106a8a1bbda4397d41546270172c7110fa0ae8132"
+    },
+    "说明": "ADC_Demo 初始化后调 `adc_set_gpio_calib_vref(1175, 0)`，盖掉 OTP 校准值，用来和带校准的读数对比。"
+  }
+]

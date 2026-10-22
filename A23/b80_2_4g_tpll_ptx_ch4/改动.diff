@@ -1,0 +1,31 @@
+--- a/vendor/2_4g_tpll/app_config.h
++++ b/vendor/2_4g_tpll/app_config.h
+@@ -29,7 +29,7 @@
+ #define TL_TPLL_PTX                     2
+ #define TL_TPLL_PRX                     3
+ 
+-#define TPLL_MODE                       TPLL_PRX
++#define TPLL_MODE                       TPLL_PTX
+ 
+ ///////////////////////// Feature Configuration////////////////////////////////////////////////
+ /**
+--- a/vendor/2_4g_tpll/app_ptx.c
++++ b/vendor/2_4g_tpll/app_ptx.c
+@@ -358,7 +358,7 @@
+     #endif
+ 
+     TPLL_ModeSet(TPLL_MODE_PTX);
+-    TPLL_SetRFChannel(7);
++    TPLL_SetRFChannel(4);
+     TPLL_SetAutoRetry(0, 150);  //5,150
+     TPLL_RxTimeoutSet(500);//if the mode is 250k ,the rx_time_out need more time, as so 1000us is ok!
+     TPLL_Preamble_Set(8);
+@@ -377,7 +377,7 @@
+     TPLL_Fast_TxSettleSet(50);
+     TPLL_Fast_RxSettleSet(50);
+     TPLL_ResetBuf();
+-    TPLL_SetRFChannel(7);
++    TPLL_SetRFChannel(4);
+     #endif
+ 
+     //configure irq

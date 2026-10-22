@@ -1,0 +1,72 @@
+--- a/drivers/printf.h
++++ b/drivers/printf.h
+@@ -24,14 +24,14 @@
+ #include "gpio.h"
+ #pragma once
+ 
+-#define DEBUG_MODE 0
++#define DEBUG_MODE 1
+ 
+ #if(DEBUG_MODE==1)
+ 
+ #define  DEBUG_IO		1
+ #define  DEBUG_USB		2
+ 
+-#define  DEBUG_BUS  	0
++#define  DEBUG_BUS  	1
+ 
+ #if(DEBUG_BUS==DEBUG_IO)
+ #define PRINT_BAUD_RATE             		115200   	//1M baud rate,should Not bigger than 1Mb/s
+--- a/vendor/ble_master/blm_host.c
++++ b/vendor/ble_master/blm_host.c
+@@ -100,11 +100,34 @@
+  * @param[in]  p - data pointer of event
+  * @return     0
+  */
++/* 客户板接收测试：用 Tdebug 读这几个计数，判断这块板能不能收到广播 */
++volatile u32 rx_adv_cnt = 0;		//收到的全部广播包
++volatile s8  rx_rssi_max = -128;	//全部广播里最强的 RSSI
++volatile u32 rx_esa_cnt = 0;		//名字以 "eSa" 开头的广播包
++volatile s8  rx_esa_rssi = 0;		//最近一个 "eSa" 广播的 RSSI
++
+ int blm_le_adv_report_event_handle(u8 *p)
+ {
+ 	event_adv_report_t *pa = (event_adv_report_t *)p;
+ 	s8 rssi = pa->data[pa->len];
+ 
++	rx_adv_cnt++;
++	if(rssi > rx_rssi_max){
++		rx_rssi_max = rssi;
++	}
++	if(pa->len >= 5 && pa->data[1] == DT_COMPLETE_LOCAL_NAME && !memcmp(&pa->data[2], "eSa", 3)){
++		rx_esa_cnt++;
++		rx_esa_rssi = rssi;
++	}
++
++	/* A20-1 验证：广播名以 "eSa" 开头的设备，每秒最多打印一次 RSSI */
++	static u32 a20_rssi_tick = 0;
++	if(pa->len >= 5 && pa->data[1] == DT_COMPLETE_LOCAL_NAME && !memcmp(&pa->data[2], "eSa", 3)
++			&& clock_time_exceed(a20_rssi_tick, 1000000)){
++		a20_rssi_tick = clock_time();
++		printf("[A20][ADV] %x:%x:%x:%x:%x:%x rssi %d, pairing key %d\n", pa->mac[5], pa->mac[4], pa->mac[3], pa->mac[2], pa->mac[1], pa->mac[0], rssi, central_pairing_enable);
++	}
++
+ 	 //if previous connection smp&sdp not finish, can not create a new connection
+ 	#if (BLE_HOST_SMP_ENABLE)
+ 		if(central_smp_pending){ 	 //if previous connection SMP not finish, can not create a new connection
+@@ -203,6 +226,7 @@
+ 	hci_le_connectionCompleteEvt_t *pConnEvt = (hci_le_connectionCompleteEvt_t *)p;
+ 	if (pConnEvt->status == BLE_SUCCESS)	// status OK
+ 	{
++		printf("[A20][CONN] established %x:%x:%x:%x:%x:%x\n", pConnEvt->peerAddr[5], pConnEvt->peerAddr[4], pConnEvt->peerAddr[3], pConnEvt->peerAddr[2], pConnEvt->peerAddr[1], pConnEvt->peerAddr[0]);
+ 		#if (UI_LED_ENABLE)
+ 			//led show connection state
+ 			master_connected_led_on = 1;
+@@ -257,6 +281,7 @@
+ int 	blm_disconnect_event_handle(u8 *p)
+ {
+ 	hci_disconnectionCompleteEvt_t	*pDisConn = (hci_disconnectionCompleteEvt_t *)p;
++	printf("[A20][TERM] reason 0x%x\n", pDisConn->reason);
+ 
+ 	//terminate reason
+ 	//connection timeout

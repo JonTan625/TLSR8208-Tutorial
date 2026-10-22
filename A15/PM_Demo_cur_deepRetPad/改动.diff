@@ -1,0 +1,49 @@
+--- a/demo/vendor/PM_Demo/app.c
++++ b/demo/vendor/PM_Demo/app.c
+@@ -28,7 +28,7 @@
+ #else
+ #define WAKEUP_PAD                      GPIO_PD0
+ #endif
+-#define CURRENT_TEST	     			0
++#define CURRENT_TEST	     			1	/* A15-2/3: was 0 */
+ #define CRC_OK			     			1
+ #define	MDEC_MATCH_VALUE				0x02
+ unsigned char 	dat[5]={0};
+@@ -135,7 +135,7 @@
+ 
+ #elif(PM_MODE==DEEP_32K_RC_WAKEUP||PM_MODE==DEEP_32K_XTAL_WAKEUP)
+ 	retention_data_test++;
+-    cpu_sleep_wakeup(DEEPSLEEP_MODE, PM_WAKEUP_TIMER, (clock_time() + 1000*CLOCK_SYS_TIMER_CLK_1MS));
++    cpu_sleep_wakeup(DEEPSLEEP_MODE, PM_WAKEUP_TIMER, (clock_time() + 60000*CLOCK_SYS_TIMER_CLK_1MS));	/* A15-2: was 1000 ms */
+ 
+ #elif(PM_MODE==DEEP_LONG_32K_RC_WAKEUP||PM_MODE==DEEP_LONG_32K_XTAL_WAKEUP)
+ 
+@@ -233,7 +233,7 @@
+ 	retention_data_test++;
+ 	cpu_sleep_wakeup(DEEPSLEEP_MODE_RET_SRAM_LOW64K, PM_WAKEUP_TIMER, (clock_time() + 4000*CLOCK_SYS_TIMER_CLK_1MS));
+ #else
+-	cpu_sleep_wakeup(DEEPSLEEP_MODE_RET_SRAM_LOW16K, PM_WAKEUP_TIMER, (clock_time() + 4000*CLOCK_SYS_TIMER_CLK_1MS));
++	cpu_sleep_wakeup(DEEPSLEEP_MODE_RET_SRAM_LOW16K, PM_WAKEUP_TIMER, (clock_time() + 60000*CLOCK_SYS_TIMER_CLK_1MS));	/* A15-2: was 4000 ms */
+ #endif
+ #elif(PM_MODE==DEEP_RET_LONG_32K_RC_WAKEUP||PM_MODE==DEEP_RET_LONG_32K_XTAL_WAKEUP)
+ 
+@@ -403,7 +403,7 @@
+ 
+ #elif(PM_MODE==SUSPEND_32K_RC_WAKEUP||PM_MODE==SUSPEND_32K_XTAL_WAKEUP)
+ 
+-	cpu_sleep_wakeup(SUSPEND_MODE, PM_WAKEUP_TIMER, clock_time() + 1000*CLOCK_SYS_TIMER_CLK_1MS);
++	cpu_sleep_wakeup(SUSPEND_MODE, PM_WAKEUP_TIMER, clock_time() + 60000*CLOCK_SYS_TIMER_CLK_1MS);	/* A15-3: was 1000 ms */
+ 
+ #elif(PM_MODE==SUSPEND_LONG_32K_RC_WAKEUP||PM_MODE==SUSPEND_LONG_32K_XTAL_WAKEUP)
+ 
+--- a/demo/vendor/PM_Demo/app_config.h
++++ b/demo/vendor/PM_Demo/app_config.h
+@@ -172,7 +172,7 @@
+ #endif
+ 
+ 
+-#define PM_MODE			     			SUSPEND_32K_RC_WAKEUP
++#define PM_MODE			     			DEEP_RET_PAD_WAKEUP
+ 
+ /* Disable C linkage for C++ Compilers: */
+ #if defined(__cplusplus)

@@ -1,0 +1,53 @@
+--- a/drivers/printf.h
++++ b/drivers/printf.h
+@@ -24,14 +24,14 @@
+ #include "gpio.h"
+ #pragma once
+ 
+-#define DEBUG_MODE 0
++#define DEBUG_MODE 1
+ 
+ #if(DEBUG_MODE==1)
+ 
+ #define  DEBUG_IO		1
+ #define  DEBUG_USB		2
+ 
+-#define  DEBUG_BUS  	0
++#define  DEBUG_BUS  	1
+ 
+ #if(DEBUG_BUS==DEBUG_IO)
+ #define PRINT_BAUD_RATE             		115200   	//1M baud rate,should Not bigger than 1Mb/s
+--- a/vendor/ble_sample/app.c
++++ b/vendor/ble_sample/app.c
+@@ -31,6 +31,10 @@
+ #include "app_ui.h"
+ #include "app_buffer.h"
+ 
++/* A19-1：保存配置的第二启动地址和 OTA 初始化后的新固件存放地址。 */
++volatile u32 a19_second_boot_addr;
++volatile u32 a19_new_fw_addr;
++
+ #define 	ADV_IDLE_ENTER_DEEP_TIME			60  //60 s
+ #define 	CONN_IDLE_ENTER_DEEP_TIME			60  //60 s
+ 
+@@ -418,6 +422,9 @@
+ 	#if(BLE_OTA_SERVER_ENABLE)
+ 		/* OTA module initialization must be called after "blc_ota_setNewFirmwareStorageAddress"(if used), and before any other OTA API.*/
+ 		blc_ota_initOtaServer_module();
++		a19_second_boot_addr = blc_ota_getCurrentUsedMultipleBootAddress();
++		a19_new_fw_addr = ota_program_offset;
++		printf("[OTA][CFG] second_boot_addr=0x%x, new_fw_addr=0x%x\n", a19_second_boot_addr, a19_new_fw_addr);
+ 		blc_ota_setOtaProcessTimeout(60); //set OTA whole process timeout
+ 		blc_ota_registerOtaStartCmdCb(app_enter_ota_mode);
+ 		blc_ota_registerOtaResultIndicationCb(app_ota_result);
+--- a/vendor/ble_sample/app_config.h
++++ b/vendor/ble_sample/app_config.h
+@@ -30,7 +30,7 @@
+  */
+ #define FLASH_SIZE_OPTION							FLASH_SIZE_OPTION_512K //very important, user need confirm !!!
+ #define BLE_APP_SECURITY_ENABLE      					1
+-#define	BLE_OTA_SERVER_ENABLE						0
++#define	BLE_OTA_SERVER_ENABLE						1
+ #define TEST_CONN_CURRENT_ENABLE					0		//test connection current, disable UI to have a pure power
+ #define SAVE_RAM_CODE_ENABLE						0			//Enable it if need save RAM code.
+ 																				//Note: When this is enabled, the average power consumption increases.If user use deepsleep retention, user need to add DeepsleepRetentionEarlyWakeupTiming.

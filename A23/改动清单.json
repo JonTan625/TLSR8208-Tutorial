@@ -1,0 +1,65 @@
+[
+  {
+    "目录": "b80_2_4g_tpll_ptx",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_2_4g_tpll",
+    "替换文件": [
+      "vendor/2_4g_tpll/app_config.h"
+    ],
+    "bin": {
+      "文件": "b80_2_4g_tpll_ptx.bin",
+      "字节": 13476,
+      "sha256": "beeec59f3ff1464b2f1d685474cc9664441d15d4bda75cb673b9c5f0bb3ff234"
+    },
+    "说明": "`TPLL_MODE` 改成 `TPLL_PTX`（发射端），信道和重传保持例程默认（信道 7、重传 0 次）。"
+  },
+  {
+    "目录": "b80_2_4g_tpll_ptx_ch4",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_2_4g_tpll",
+    "替换文件": [
+      "vendor/2_4g_tpll/app_config.h",
+      "vendor/2_4g_tpll/app_ptx.c"
+    ],
+    "bin": {
+      "文件": "b80_2_4g_tpll_ptx_ch4.bin",
+      "字节": 13476,
+      "sha256": "85b123b4f742b75e6d95d73c9b855c76d01e5a6d4a5d3ab49f2e7c6b7cea2db8"
+    },
+    "说明": "PTX，信道改成 4（和第 24 篇双模例程的 2.4G 信道一致）。"
+  },
+  {
+    "目录": "b80_2_4g_tpll_ptx_retry5",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_2_4g_tpll",
+    "替换文件": [
+      "vendor/2_4g_tpll/app_config.h",
+      "vendor/2_4g_tpll/app_ptx.c"
+    ],
+    "bin": {
+      "文件": "b80_2_4g_tpll_ptx_retry5.bin",
+      "字节": 13476,
+      "sha256": "755afe95e6f884c2a48dcf56f8e2bb048dfcd71165ebf3ebbe08fce4b0ad3943"
+    },
+    "说明": "PTX，自动重传改成 5 次。"
+  },
+  {
+    "目录": "b80_2_4g_tpll_ptx_ch4_retry5",
+    "SDK": "tc_ble_simple_sdk V3.4.2.2 + patch_0001",
+    "工程": "tc_ble_simple_b80_sdk",
+    "编译配置": "b80_2_4g_tpll",
+    "替换文件": [
+      "vendor/2_4g_tpll/app_config.h",
+      "vendor/2_4g_tpll/app_ptx.c"
+    ],
+    "bin": {
+      "文件": "b80_2_4g_tpll_ptx_ch4_retry5.bin",
+      "字节": 13476,
+      "sha256": "4df4af67197146c0d1246b936490df8948caa657faf09de8c4aaf7dbf68f0b95"
+    },
+    "说明": "PTX，信道 4、自动重传 5 次。"
+  }
+]

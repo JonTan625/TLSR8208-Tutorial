@@ -1,0 +1,17 @@
+[
+  {
+    "目录": "Keyscan_Demo_suspend",
+    "SDK": "tc_platform_sdk V3.5.1",
+    "工程": "B80_Driver_Demo",
+    "编译配置": "Keyscan_Demo",
+    "替换文件": [
+      "demo/vendor/Keyscan_Demo/app_config.h"
+    ],
+    "bin": {
+      "文件": "Keyscan_Demo_suspend.bin",
+      "字节": 10804,
+      "sha256": "7458bdfb3b8961fe6b77522e922e413da3961a47787cd68a34dd778b31049876"
+    },
+    "说明": "`KEYSCAN_TEST_SUSPEND` 改成 1：主循环里进 Suspend，由键盘扫描唤醒（`PM_WAKEUP_CORE_KEY_SCAN`）。"
+  }
+]
